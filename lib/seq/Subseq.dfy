@@ -1,4 +1,5 @@
 include "../Seq.dfy"
+include "./Map.dfy"
 
 import opened Seq
 
@@ -90,3 +91,8 @@ lemma SubseqRemoveLast<T>(xs: seq<T>)
 //   reveal Subseq();
   
 // }
+
+function Subseqs<T>(xs: seq<T>) : seq<seq<T>>
+{
+  if |xs| == 0 then [[]] else Subseqs(xs[1..]) + Map(ys => Cons(xs[0], ys), Subseqs(xs[1..]))
+}
