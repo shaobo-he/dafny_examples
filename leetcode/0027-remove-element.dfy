@@ -8,7 +8,6 @@ import opened SeqCount
 //   Foldl'((r, x)=> r + (if x == v then 1 else 0), 0, xs)
 // }
 
-// TODO: ensure that multiplicities of elements are preserved
 method RemoveElement(nums: array<int>, val: int) returns (length: nat)
   modifies nums
   ensures length <= nums.Length
