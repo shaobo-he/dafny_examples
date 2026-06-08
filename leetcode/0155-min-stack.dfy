@@ -17,7 +17,7 @@ class MinStack {
   ghost var dataSeq: seq<int>
   ghost var minsSeq: seq<int>
 
-  ghost predicate Valid() 
+  ghost predicate Valid()
     reads this
   {
     ToSeq(data) == dataSeq && ToSeq(mins) == minsSeq && |dataSeq| == |minsSeq|

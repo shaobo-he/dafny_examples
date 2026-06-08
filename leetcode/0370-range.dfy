@@ -6,7 +6,7 @@ function AddRange(xs: seq<int>, a: int, b: int, v: int): seq<int> {
   seq(|xs|, i requires 0 <= i < |xs| => xs[i] + if a <= i <= b then v else 0)
 }
 
-function PerformUpdates(xs: seq<int>, updates: seq<(int, int, int)>): seq<int> 
+function PerformUpdates(xs: seq<int>, updates: seq<(int, int, int)>): seq<int>
   decreases updates
 {
   if |updates| == 0 then
@@ -19,8 +19,28 @@ function PerformUpdates(xs: seq<int>, updates: seq<(int, int, int)>): seq<int>
 lemma PerformUpdates1(xs: seq<int>, u: seq<(int, int, int)>)
   requires |u| > 0
   ensures PerformUpdates(xs, u) == PerformUpdates(PerformUpdates(xs, u[..|u| - 1]), [u[|u| - 1]])
+  decreases |u|
 {
-
+  if |u| == 1 {
+    assert u == [u[0]];
+    assert u[..|u| - 1] == [];
+  } else {
+    var (a, b, v) := u[0];
+    var xs' := AddRange(xs, a, b, v);
+    // LHS = PerformUpdates(xs', u[1..])
+    // Apply IH to u[1..]
+    PerformUpdates1(xs', u[1..]);
+    // IH: PerformUpdates(xs', u[1..]) == PerformUpdates(PerformUpdates(xs', u[1..][..|u[1..]| - 1]), [u[1..][|u[1..]| - 1]])
+    assert u[1..][..|u[1..]| - 1] == u[1..|u| - 1];
+    assert u[1..][|u[1..]| - 1] == u[|u| - 1];
+    // So LHS == PerformUpdates(PerformUpdates(xs', u[1..|u|-1]), [u[|u|-1]])
+    // Now RHS: PerformUpdates(PerformUpdates(xs, u[..|u|-1]), [u[|u|-1]])
+    // unfold inner: u[..|u|-1] has length >= 1, first elt is u[0] = (a,b,v)
+    assert u[..|u| - 1][0] == u[0];
+    assert u[..|u| - 1][1..] == u[1..|u| - 1];
+    // So PerformUpdates(xs, u[..|u|-1]) == PerformUpdates(AddRange(xs, a, b, v), u[1..|u|-1])
+    //                                   == PerformUpdates(xs', u[1..|u|-1])
+  }
 }
 
 // method AddRangeTest(xs: array<int>, a: int, b: int, v: int) returns (ys: array<int>)
@@ -65,21 +85,30 @@ method GetModifiedArraySimple(length: int, updates: array<(int, int, int)>) retu
     assert vs == PerformUpdates(seq(length, _ => 0), us);
     var i := a;
     while i <= b
-      invariant i <= b + 1
-      invariant arr[i..] == vs[i..];
-      invariant s[..i] == arr[..i]
-      invariant s[b + 1..] == arr[b + 1..]
+      invariant a <= i <= b + 1
+      invariant arr.Length == length
+      invariant arr[i..] == vs[i..]
+      invariant s == AddRange(vs, a, b, v)
+      invariant arr[..i] == s[..i]
       invariant vs == PerformUpdates(seq(length, _ => 0), us)
       invariant updates[..k] == us
     {
+      assert arr[i] == vs[i];
+      assert s[i] == vs[i] + v;
       arr[i] := arr[i] + v;
+      assert arr[i] == s[i];
+      assert arr[..i + 1] == arr[..i] + [arr[i]];
+      assert s[..i + 1] == s[..i] + [s[i]];
       i := i + 1;
     }
     assert vs == PerformUpdates(seq(length, _ => 0), us);
     assert s == PerformUpdates(vs, [updates[k]]);
     PerformUpdates1(seq(length, _ => 0), updates[..k + 1]);
+    assert updates[..k + 1][..k] == us;
+    assert updates[..k + 1][k] == updates[k];
+    assert PerformUpdates(seq(length, _ => 0), updates[..k + 1][..k]) == vs;
+    assert [updates[..k + 1][k]] == [updates[k]];
     k := k + 1;
-    // assume s == PerformUpdates(seq(length, _ => 0), updates[..k]);
   }
   assert updates[..] == updates[..updates.Length];
 }

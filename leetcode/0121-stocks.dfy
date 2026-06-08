@@ -22,7 +22,7 @@ method MaxProfitSimple1(prices: array<int>) returns (profit: int)
     invariant forall u, v :: 0 <= u < i && u <= v < prices.Length ==> prices[v] - prices[u] <= profit
   {
     var j := i;
-    while j < prices.Length 
+    while j < prices.Length
       invariant i <= j <= prices.Length
       invariant forall u, v :: 0 <= u < i && u <= v < prices.Length ==> prices[v] - prices[u] <= profit
       invariant forall v :: i <= v < j ==> prices[v] - prices[i] <= profit

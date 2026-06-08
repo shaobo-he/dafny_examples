@@ -14,9 +14,9 @@ module DigitsModule {
     if n <= 0 then [0]
     else if n < base then [n]
     else (
-      assert 0 <= n / base < n;
-      Digits(n / base, base) + [n % base]
-    )
+           assert 0 <= n / base < n;
+           Digits(n / base, base) + [n % base]
+         )
   }
 
   lemma DigitsOne(n: int, base: int)
