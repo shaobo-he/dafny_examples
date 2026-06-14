@@ -7,14 +7,15 @@ small reusable library of lemmas and data-structure helpers.
 
 ## Layout
 
-- `leetcode/` — 16 LeetCode problems with verified specs (sqrt, two-sum, max
-  subarray, k-th factor, invert/symmetric binary tree, range update, etc.).
+- `leetcode/` — 22 LeetCode problems with verified specs (sqrt, two-sum, max
+  subarray, k-th factor, invert/symmetric binary tree, range update, merge
+  sorted array, merge k sorted lists, best-time-to-buy-and-sell-stock, etc.).
 - `lib/`
   - `Seq.dfy`, `SeqMethods.dfy`, `List.dfy`, `MinMax.dfy`, `Pow.dfy` —
     sequence and arithmetic utilities.
   - `seq/` — `Count`, `Digits`, `Fold`, `Map`, `Palindrome`, `Subseq`, `Undup`.
   - `math/` — `Abs`, `DivMod`, `EvenOdd`, `Factors`, `Gcd`.
-  - `adt/` — `BinaryTree`, `BST`.
+  - `adt/` — `BinaryTree`, `BST`, `Graph` (topological sort via Kahn's BFS).
 - Root-level `.dfy` files — small standalone experiments (vector class, set
   abstractions, shuffle/random-entry methods).
 
