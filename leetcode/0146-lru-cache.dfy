@@ -318,6 +318,9 @@ class LRUCache {
     ensures key in old(AsMapOf(entries)) ==>
               r == old(AsMapOf(entries))[key]
               && |entries| > 0 && entries[0] == (key, r)
+              // the other entries keep their original relative order (just the
+              // accessed key moved to the front)
+              && entries[1..] == RemoveKey(old(entries), key)
     ensures key !in old(AsMapOf(entries)) ==> r == -1 && entries == old(entries)
   {
     AsMapMembership(entries, key);
@@ -354,6 +357,12 @@ class LRUCache {
     ensures key !in old(AsMapOf(entries)) && |old(entries)| == capacity ==>
               AsMapOf(entries) ==
               old(AsMapOf(entries))[key := value] - {old(entries)[|old(entries)| - 1].0}
+    // order preservation: the surviving entries keep their original relative
+    // order behind the new front element.
+    ensures (key in old(AsMapOf(entries)) || |old(entries)| < capacity) ==>
+              entries[1..] == RemoveKey(old(entries), key)
+    ensures key !in old(AsMapOf(entries)) && |old(entries)| == capacity ==>
+              entries[1..] == old(entries)[..|old(entries)| - 1]
   {
     ghost var old_e := entries;
     AsMapMembership(entries, key);

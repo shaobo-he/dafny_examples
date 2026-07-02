@@ -1,3 +1,11 @@
+// LeetCode 1: Two Sum.
+// Note on the "minimality" postcondition (forall i<j<r.1 :: sum != target): it
+// pins r.1 as the SMALLEST possible second index of any solution; among pairs
+// ending at r.1 it returns one valid first index (the map keeps the earliest
+// complement seen), but r.0 is not claimed to be the globally smallest first
+// index. This is the "earliest solution by second index" notion, not the
+// lexicographically-smallest pair.
+//
 // If this invariant is added explicitly to the loop then the verfication never finishes.
 // It could be {:opaque} for a more controlled verification:
 // assert InMap([], m, target) by {
