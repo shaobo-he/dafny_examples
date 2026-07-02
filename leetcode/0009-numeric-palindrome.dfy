@@ -22,6 +22,7 @@ lemma DigitsSplitHi(a: int, base: int)
 method ReverseNumber(n: int) returns (r: int)
   requires 0 <= n
   requires n == 0 || n % 10 != 0
+  ensures 0 <= r
   ensures Digits(r, 10) == Reverse(Digits(n, 10))
 {
   r := 0;
@@ -157,18 +158,49 @@ method ReverseNumber(n: int) returns (r: int)
   }
 }
 
+// Digits is injective: the fold in DigitsSpec reconstructs the number, so equal
+// digit sequences come from equal numbers.
+lemma DigitsInjective(a: int, b: int, base: int)
+  requires 0 <= a && 0 <= b && 2 <= base
+  requires Digits(a, base) == Digits(b, base)
+  ensures a == b
+{
+  DigitsSpec(a, base);
+  DigitsSpec(b, base);
+}
+
+// A positive number ending in 0 is never a palindrome: its last digit is 0 but
+// its leading digit is nonzero.
+lemma NotPalindromeTrailingZero(n: int)
+  requires 0 < n && n % 10 == 0
+  ensures !NumericPalindrome(n)
+{
+  var D := Digits(n, 10);
+  DigitsSplitHi(n, 10);              // n >= 10, so D == Digits(n/10,10) + [n % 10]
+  DigitsNoLeading0(n, 10);           // D[0] > 0
+  if NumericPalindrome(n) {
+    ReverseIndexAll(D);              // Reverse(D)[i] == D[|D|-1-i]
+    assert D[|D| - 1] == n % 10 == 0;
+    assert D == Reverse(D) && Reverse(D)[|D| - 1] == D[0];
+  }
+}
+
 method IsPalindrome(n: int) returns (r: bool)
   requires 0 <= n
-  ensures r == true ==> NumericPalindrome(n)
+  ensures r == NumericPalindrome(n)
 {
   if n > 0 && n % 10 == 0 {
+    NotPalindromeTrailingZero(n);
     return false;
   }
   var rev := ReverseNumber(n);
   r := (rev == n);
   if r {
-    assert Digits(rev, 10) == Reverse(Digits(n, 10));
-    assert rev == n;
     assert Digits(n, 10) == Reverse(Digits(n, 10));
+  } else if NumericPalindrome(n) {
+    // Digits(rev) == Reverse(Digits(n)) == Digits(n)  ==>  rev == n, contradiction.
+    assert Digits(rev, 10) == Reverse(Digits(n, 10)) == Digits(n, 10);
+    DigitsInjective(rev, n, 10);
+    assert false;
   }
 }

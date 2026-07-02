@@ -2,6 +2,7 @@
 include "../lib/adt/BinaryTree.dfy"
 
 import opened BinaryTree
+import opened Seq
 
 function Mirror<T>(t: Tree<T>) : (r: Tree<T>)
   ensures Size(r) == Size(t)
@@ -9,6 +10,22 @@ function Mirror<T>(t: Tree<T>) : (r: Tree<T>)
   match t
   case Nil => Nil
   case Node(x, l, r) => Node(x, Mirror(r), Mirror(l))
+}
+
+// The defining characterization of inversion: mirroring a tree reverses its
+// in-order traversal. Unlike Size/MirrorEq/MirrorPerm below, this is NOT
+// satisfied by the identity (no-swap) function, so it genuinely pins down that
+// left and right subtrees are swapped at every node.
+lemma MirrorInorderReverse<T>(t: Tree<T>)
+  ensures InorderFlatten(Mirror(t)) == Reverse(InorderFlatten(t))
+{
+  match t
+  case Nil =>
+  case Node(x, l, r) =>
+    MirrorInorderReverse(l);
+    MirrorInorderReverse(r);
+    ReverseConcat(InorderFlatten(l) + [x], InorderFlatten(r));
+    ReverseConcat(InorderFlatten(l), [x]);
 }
 
 // The involution Equal?(Mirror(Mirror(t)), t) cannot be stated as a
