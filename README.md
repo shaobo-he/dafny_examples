@@ -14,7 +14,8 @@ small reusable library of lemmas and data-structure helpers.
   volume; 2-D exact volume via the escape-level fixpoint), median of two sorted
   arrays (O(log) partition search proven exact), critical connections (bridges
   proven to be exactly the edges whose removal disconnects their endpoints,
-  plus Tarjan's low[v] > disc[u] criterion proven equivalent on a DFS tree),
+  plus Tarjan's low[v] > disc[u] criterion proven equivalent on a DFS tree,
+  plus a verified DFS that constructs such a tree -- no cross edges and all),
   etc.).
 - `lib/`
   - `Seq.dfy`, `SeqMethods.dfy`, `List.dfy`, `MinMax.dfy`, `Pow.dfy` —
