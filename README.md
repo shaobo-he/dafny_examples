@@ -11,7 +11,8 @@ small reusable library of lemmas and data-structure helpers.
   subarray, k-th factor, invert/symmetric binary tree, range update, merge
   sorted array, merge k sorted lists, best-time-to-buy-and-sell-stock, LRU
   cache, basic calculator III, burst balloons, trapping rain water (1-D exact
-  volume; 2-D exact volume via the escape-level fixpoint), etc.).
+  volume; 2-D exact volume via the escape-level fixpoint), median of two sorted
+  arrays (O(log) partition search proven exact), etc.).
 - `lib/`
   - `Seq.dfy`, `SeqMethods.dfy`, `List.dfy`, `MinMax.dfy`, `Pow.dfy` —
     sequence and arithmetic utilities.
