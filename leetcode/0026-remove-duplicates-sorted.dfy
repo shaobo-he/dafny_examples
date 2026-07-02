@@ -30,30 +30,41 @@ method RemveDuplicates(nums: array<int>) returns (length: int)
 {
   var j := 0;
   var i := 1;
-  // src[k] records the original index nums[k] was copied from. The explicit
-  // {:trigger src[k]} stops Z3 from chasing the nested array select through
-  // every index, which is what blew up the solve time.
+  // Both membership directions are witnessed by explicit index maps, so the
+  // loop invariants are purely universal (no "x in seq" existential). The
+  // {:trigger} pins stop Z3 from chasing the nested array selects through every
+  // index (which otherwise blows up / destabilizes the solve time), and the two
+  // existential steps are discharged by the isolated MembershipViaWitness lemma.
+  //   src[k]: nums[k]      == old(nums[src[k]])   (kept values are original)
+  //   fwd[k]: old(nums[k]) == nums[fwd[k]]        (originals are covered)
   ghost var src := [0];
+  ghost var fwd := [0];
   while i < nums.Length
     invariant j < i <= nums.Length
     invariant nums[j + 1..] == old(nums[j + 1..])
     invariant SortedStrict(nums[..j + 1])
     invariant i < nums.Length ==> forall k :: 0 <= k < i ==> nums[k] <= nums[i]
-    invariant forall k :: 0 <= k < i ==> old(nums[k]) in nums[..j + 1]
     invariant i < nums.Length ==> nums[j] <= nums[i]
     invariant |src| == j + 1
     invariant forall k {:trigger src[k]} :: 0 <= k <= j ==>
                                               0 <= src[k] < nums.Length && nums[k] == old(nums[src[k]])
+    invariant |fwd| == i
+    invariant forall k {:trigger fwd[k]} :: 0 <= k < i ==>
+                                              0 <= fwd[k] <= j && nums[fwd[k]] == old(nums[k])
   {
+    assert nums[i] == old(nums[i]);
     if nums[i] != nums[j] {
-      assert nums[i] == old(nums[i]);
       j := j + 1;
       nums[j] := nums[i];
       src := src + [i];
+      fwd := fwd + [j];
       assert nums[..j + 1] == nums[..j] + [nums[i]];
+    } else {
+      fwd := fwd + [j];
     }
     i := i + 1;
   }
   length := j + 1;
-  MembershipViaWitness(nums[..length], old(nums[..]), src);
+  MembershipViaWitness(nums[..length], old(nums[..]), src);   // kept values are original
+  MembershipViaWitness(old(nums[..]), nums[..length], fwd);   // originals are covered
 }
