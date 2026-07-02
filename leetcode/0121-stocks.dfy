@@ -15,18 +15,25 @@ predicate MaxProfitProp(xs: seq<int>, v: int) {
 
 method MaxProfitSimple1(prices: array<int>) returns (profit: int)
   ensures MaxProfitProp(prices[..], profit)
+  ensures profit == 0 || exists u, v :: 0 <= u <= v < prices.Length && profit == prices[v] - prices[u]
 {
   profit := 0;
+  ghost var wu, wv := 0, 0;
   var i := 0;
   while i < prices.Length
     invariant forall u, v :: 0 <= u < i && u <= v < prices.Length ==> prices[v] - prices[u] <= profit
+    invariant profit == 0 || (0 <= wu <= wv < prices.Length && profit == prices[wv] - prices[wu])
   {
     var j := i;
     while j < prices.Length
       invariant i <= j <= prices.Length
       invariant forall u, v :: 0 <= u < i && u <= v < prices.Length ==> prices[v] - prices[u] <= profit
       invariant forall v :: i <= v < j ==> prices[v] - prices[i] <= profit
+      invariant profit == 0 || (0 <= wu <= wv < prices.Length && profit == prices[wv] - prices[wu])
     {
+      if prices[j] - prices[i] > profit {
+        wu, wv := i, j;
+      }
       profit := Max(profit, prices[j] - prices[i]);
       j := j + 1;
     }
@@ -37,18 +44,27 @@ method MaxProfitSimple1(prices: array<int>) returns (profit: int)
 method MaxProfit1(prices: array<int>) returns (profit: int)
   requires 1 <= prices.Length
   ensures MaxProfitProp(prices[..], profit)
+  ensures profit == 0 || exists u, v :: 0 <= u <= v < prices.Length && profit == prices[v] - prices[u]
 {
   var low := prices[0];
   profit := 0;
   var k := 0;
+  ghost var lowIdx := 0;
+  ghost var wu, wv := 0, 0;
 
   while k < prices.Length
     invariant k <= prices.Length
     invariant forall i :: 0 <= i < k ==> prices[i] >= low
+    invariant 0 <= lowIdx < prices.Length && low == prices[lowIdx] && lowIdx <= k
     invariant MaxProfitProp(prices[..k], profit)
+    invariant profit == 0 || (0 <= wu <= wv < prices.Length && profit == prices[wv] - prices[wu])
   {
     if prices[k] < low {
       low := prices[k];
+      lowIdx := k;
+    }
+    if prices[k] - low > profit {
+      wu, wv := lowIdx, k;
     }
     profit := Max(profit, prices[k] - low);
     k := k + 1;
@@ -57,6 +73,7 @@ method MaxProfit1(prices: array<int>) returns (profit: int)
 
 method MaxProfit2(prices: array<int>) returns (profit: int)
   requires 1 <= prices.Length
+  ensures MaxProfitProp(prices[..], profit)
   ensures profit > 0 ==> exists i, j :: 0 <= i < prices.Length && i < j < prices.Length && profit == prices[j] - prices[i]
 {
   var low := prices[0];
@@ -69,6 +86,8 @@ method MaxProfit2(prices: array<int>) returns (profit: int)
     invariant k <= prices.Length
     invariant lowIndex == 0 || lowIndex < k
     invariant low == prices[lowIndex]
+    invariant forall t :: 0 <= t < k ==> prices[t] >= low
+    invariant MaxProfitProp(prices[..k], profit)
     invariant profit > 0 ==> 0 <= i < prices.Length && 0 <= j < prices.Length
     invariant profit > 0 ==> i < j
     invariant profit > 0 ==> profit == prices[j] - prices[i]
