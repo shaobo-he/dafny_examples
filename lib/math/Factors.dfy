@@ -140,10 +140,15 @@ module FactorsModule {
     }
   }
 
-  lemma {:axiom} AllFactorsSymmetric(n: int, i: int)
+  // Every listed factor is positive. (The divisor-pairing identity
+  // AllFactors(n)[|A|-i-1] == n / AllFactors(n)[i] that previously sat here as an
+  // unproven {:axiom} was unused; it can be reinstated with a real order-reversing
+  // bijection proof if needed.)
+  lemma AllFactorsPositive(n: int, i: int)
     requires 0 <= i < |AllFactors(n)|
     ensures AllFactors(n)[i] > 0
-    ensures AllFactors(n)[|AllFactors(n)| - i - 1] == n / AllFactors(n)[i]
-
-
+  {
+    assert AllFactors(n)[i] in AllFactors(n);
+    InFactors(n, n, AllFactors(n)[i]);
+  }
 }
