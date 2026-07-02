@@ -7,12 +7,14 @@ small reusable library of lemmas and data-structure helpers.
 
 ## Layout
 
-- `leetcode/` — 27 LeetCode problems with verified specs (sqrt, two-sum, max
+- `leetcode/` — 29 LeetCode problems with verified specs (sqrt, two-sum, max
   subarray, k-th factor, invert/symmetric binary tree, range update, merge
   sorted array, merge k sorted lists, best-time-to-buy-and-sell-stock, LRU
   cache, basic calculator III, burst balloons, trapping rain water (1-D exact
   volume; 2-D exact volume via the escape-level fixpoint), median of two sorted
-  arrays (O(log) partition search proven exact), etc.).
+  arrays (O(log) partition search proven exact), critical connections (bridges
+  proven to be exactly the edges whose removal disconnects their endpoints),
+  etc.).
 - `lib/`
   - `Seq.dfy`, `SeqMethods.dfy`, `List.dfy`, `MinMax.dfy`, `Pow.dfy` —
     sequence and arithmetic utilities.
