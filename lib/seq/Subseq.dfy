@@ -83,6 +83,39 @@ lemma SubseqRemoveLast<T>(xs: seq<T>)
   SubseqSlice(xs, 0, |xs| - 1);
 }
 
+
+lemma SubseqSingletonLast<T>(ys: seq<T>, x: T)
+  ensures Subseq([x], ys + [x])
+{
+  reveal Subseq();
+  if |ys| > 0 && ys[0] != x {
+    SubseqSingletonLast(ys[1..], x);
+    assert (ys + [x])[1..] == ys[1..] + [x];
+  }
+}
+
+lemma SubseqAppendSame<T>(xs: seq<T>, ys: seq<T>, x: T)
+  requires Subseq(xs, ys)
+  ensures Subseq(xs + [x], ys + [x])
+{
+  reveal Subseq();
+  if |xs| == 0 {
+    assert xs + [x] == [x];
+    SubseqSingletonLast(ys, x);
+  } else {
+    if |ys| == 0 {
+      assert false;
+    } else if xs[0] == ys[0] {
+      SubseqAppendSame(xs[1..], ys[1..], x);
+      assert (xs + [x])[1..] == xs[1..] + [x];
+      assert (ys + [x])[1..] == ys[1..] + [x];
+    } else {
+      SubseqAppendSame(xs, ys[1..], x);
+      assert (ys + [x])[1..] == ys[1..] + [x];
+    }
+  }
+}
+
 // lemma SubseqConcat<T>(xs1: seq<T>, ys1: seq<T>, xs2: seq<T>, ys2: seq<T>)
 //   requires Subseq(xs1, ys1) && Subseq(xs2, ys2)
 //   ensures Subseq(xs1 + xs2, ys1 + ys2)

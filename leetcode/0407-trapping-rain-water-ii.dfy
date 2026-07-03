@@ -6,14 +6,13 @@
 // pop the lowest water level on the frontier and, for each unvisited neighbour,
 // trap max(0, level - height) and push it back at level max(level, height).
 //
-// TrappingRainWaterFlood proves memory safety, termination, and non-negative
-// output for the heap-flood implementation. The public TrappingRainWater method
-// below delegates to the denotational escape-level proof in
-// 0407-trapping-rain-water-ii-correct.dfy, whose postcondition states the exact
-// trapped-water volume.
+// HeapFloodNonnegative proves memory safety, termination, and non-negative
+// output for the heap-flood implementation. It is deliberately not exposed as
+// the full LeetCode solution: this file does not prove the heap flood equivalent
+// to the denotational escape-level specification in
+// 0407-trapping-rain-water-ii-correct.dfy.
 
 include "../lib/adt/PriorityQueue.dfy"
-include "0407-trapping-rain-water-ii-correct.dfy"
 
 import opened PriorityQueue
 
@@ -60,7 +59,7 @@ method ProcessNeighbor(heightMap: seq<seq<int>>, m: int, n: int, ghost AC: set<(
   }
 }
 
-method TrappingRainWaterFlood(heightMap: seq<seq<int>>, n: int) returns (water: int)
+method HeapFloodNonnegative(heightMap: seq<seq<int>>, n: int) returns (water: int)
   requires |heightMap| >= 1 && n >= 1
   requires forall i :: 0 <= i < |heightMap| ==> |heightMap[i]| == n
   ensures water >= 0
@@ -116,15 +115,4 @@ method TrappingRainWaterFlood(heightMap: seq<seq<int>>, n: int) returns (water: 
     water, visited, heap := ProcessNeighbor(heightMap, m, n, AC, h, ci, cj + 1, water, visited, heap);
     SubsetCard(visited, AC);
   }
-}
-
-method TrappingRainWater(heightMap: seq<seq<int>>) returns (water: int, ghost L: seq<seq<int>>)
-  requires Rect(heightMap)
-  requires forall i, j :: InGrid(heightMap, i, j) ==> 0 <= heightMap[i][j] <= 20000
-  ensures IsWater(heightMap, L)
-  ensures forall L' :: IsWater(heightMap, L') ==>
-                         forall i, j :: InGrid(heightMap, i, j) ==> L'[i][j] <= L[i][j]
-  ensures water == Vol(L, heightMap)
-{
-  water, L := ComputeTrappedWater(heightMap, 20000);
 }

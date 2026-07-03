@@ -432,6 +432,31 @@ method ComputeTrappedWater(H: seq<seq<int>>, hi: int) returns (vol: int, ghost L
   vol := Vol(EscGrid(H, hi, k), H);
 }
 
+// Public exact solution backed by the denotational escape-level proof above.
+method TrappingRainWaterByEscapeLevels(heightMap: seq<seq<int>>) returns (water: int)
+  requires Rect(heightMap)
+  requires forall i, j :: InGrid(heightMap, i, j) ==> 0 <= heightMap[i][j] <= 20000
+  ensures exists L :: IsWater(heightMap, L) &&
+                      (forall L' :: IsWater(heightMap, L') ==>
+                         forall i, j :: InGrid(heightMap, i, j) ==> L'[i][j] <= L[i][j]) &&
+                      water == Vol(L, heightMap)
+{
+  ghost var L: seq<seq<int>>;
+  water, L := ComputeTrappedWater(heightMap, 20000);
+}
+
+
+method TrappingRainWater(heightMap: seq<seq<int>>) returns (water: int)
+  requires Rect(heightMap)
+  requires forall i, j :: InGrid(heightMap, i, j) ==> 0 <= heightMap[i][j] <= 20000
+  ensures exists L :: IsWater(heightMap, L) &&
+                      (forall L' :: IsWater(heightMap, L') ==>
+                         forall i, j :: InGrid(heightMap, i, j) ==> L'[i][j] <= L[i][j]) &&
+                      water == Vol(L, heightMap)
+{
+  water := TrappingRainWaterByEscapeLevels(heightMap);
+}
+
 // A concrete anchor: a 3x3 bowl of height-5 walls around a height-1 pit holds
 // exactly 5-1 = 4 units. Relaxation stabilises after one round.
 lemma {:fuel EscCell, 4} {:fuel EscGrid, 2} {:fuel GridSum, 4} {:fuel RowSum, 4}

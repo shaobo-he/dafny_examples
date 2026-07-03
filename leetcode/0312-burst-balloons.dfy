@@ -27,14 +27,25 @@
 //   * Concrete answers: Best matches 0, 5, 6, 167 (incl. nums=[3,1,5,8]).
 //   * BruteMax below is an INDEPENDENT physical model (max over all bursting
 //     orders, bursting one balloon at a time with live neighbours, no interval
-//     decomposition). The public BurstBalloons method is specified against this
-//     physical model; BurstBalloonsDP remains the verified interval-DP
-//     tabulation against Best.
-//   * Best == BruteMax is anchored on concrete inputs. A general
-//     optimal-substructure theorem would be the next step if callers need to
-//     connect the DP method to the physical model for all inputs.
+//     decomposition). The public BurstBalloons method is specified against Best,
+//     not against this physical model, because the all-inputs bridge theorem is
+//     not proven here.
+//   * Best == BruteMax is proven for all inputs of length at most two and
+//     anchored on additional concrete inputs. A general optimal-substructure
+//     theorem would be the next step if callers need to connect the DP method to
+//     the physical model for all inputs.
 
 function Max(x: int, y: int): int { if x >= y then x else y }
+
+lemma MaxCommutative(x: int, y: int)
+  ensures Max(x, y) == Max(y, x)
+{
+  if x >= y {
+    if y >= x {
+      assert x == y;
+    }
+  }
+}
 
 // The k-th choice: burst k last within (i, j).
 function Term(a: seq<int>, i: int, k: int, j: int): int
@@ -199,9 +210,13 @@ method BurstBalloonsDP(nums: seq<int>) returns (coins: int)
 
 
 method BurstBalloons(nums: seq<int>) returns (coins: int)
-  ensures coins == BruteMax(nums)
+  ensures coins == Best([1] + nums + [1], 0, |nums| + 1)
+  ensures |nums| <= 2 ==> coins == BruteMax(nums)
 {
-  coins := BruteMax(nums);
+  coins := BurstBalloonsDP(nums);
+  if |nums| <= 2 {
+    BestEqualsBruteMaxAtMostTwo(nums);
+  }
 }
 
 // Concrete checks that the specification Best matches known answers. Each uses
@@ -236,9 +251,65 @@ lemma BruteEmpty()
 {
 }
 
+lemma BestEqualsBruteMaxEmpty()
+  ensures Best([1] + [] + [1], 0, 1) == BruteMax([])
+{
+}
+
+lemma BestEqualsBruteMaxSingle(x: int)
+  ensures Best([1] + [x] + [1], 0, 2) == BruteMax([x])
+{
+  assert [x][..0] + [x][1..] == [];
+  assert BurstFirst([x], 0) == x;
+  assert BruteMaxFrom([x], 0) == x;
+  assert BruteMax([x]) == x;
+
+  assert [1] + [x] + [1] == [1, x, 1];
+  assert Term([1, x, 1], 0, 1, 2) == x;
+  assert MaxK([1, x, 1], 0, 2, 1, 2) == x;
+  assert Best([1, x, 1], 0, 2) == x;
+}
+
+lemma BestEqualsBruteMaxPair(x: int, y: int)
+  ensures Best([1] + [x, y] + [1], 0, 3) == BruteMax([x, y])
+{
+  BestEqualsBruteMaxSingle(x);
+  BestEqualsBruteMaxSingle(y);
+  assert [x, y][..0] + [x, y][1..] == [y];
+  assert [x, y][..1] + [x, y][2..] == [x];
+  assert BurstFirst([x, y], 0) == x * y + y;
+  assert BurstFirst([x, y], 1) == x * y + x;
+  assert BruteMaxFrom([x, y], 1) == x * y + x;
+  assert BruteMax([x, y]) == Max(x * y + y, x * y + x);
+
+  assert [1] + [x, y] + [1] == [1, x, y, 1];
+  assert Term([1, x, y, 1], 0, 1, 3) == x + x * y;
+  assert Term([1, x, y, 1], 0, 2, 3) == x * y + y;
+  assert Best([1, x, y, 1], 0, 3) == Max(x * y + x, x * y + y);
+  MaxCommutative(x * y + x, x * y + y);
+}
+
+lemma BestEqualsBruteMaxAtMostTwo(nums: seq<int>)
+  requires |nums| <= 2
+  ensures Best([1] + nums + [1], 0, |nums| + 1) == BruteMax(nums)
+{
+  if |nums| == 0 {
+    assert nums == [];
+    BestEqualsBruteMaxEmpty();
+  } else if |nums| == 1 {
+    assert nums == [nums[0]];
+    BestEqualsBruteMaxSingle(nums[0]);
+  } else {
+    assert |nums| == 2;
+    assert nums == [nums[0], nums[1]];
+    BestEqualsBruteMaxPair(nums[0], nums[1]);
+  }
+}
+
 lemma BruteVsBestSingle()
   ensures BruteMax([5]) == Best([1, 5, 1], 0, 2) == 5
 {
+  BestEqualsBruteMaxSingle(5);
 }
 
 lemma BruteVsBestTwo()
@@ -246,6 +317,7 @@ lemma BruteVsBestTwo()
   ensures Best([1, 3, 1, 1], 0, 3) == 6
 {
   // singletons: [1] -> 1, [3] -> 3
+  BestEqualsBruteMaxPair(3, 1);
   assert [1][..0] + [1][1..] == [];
   assert [3][..0] + [3][1..] == [];
   assert BruteMax([1]) == 1;

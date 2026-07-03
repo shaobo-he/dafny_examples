@@ -268,11 +268,90 @@ function parseExpr(s: seq<char>, i: nat): (r: (Expr, nat))
   parseExprRest(s, pt.0, pt.1)
 }
 
-// A LeetCode-valid input is accepted by the parser as a whole expression, and
-// no divisor evaluates to zero. This rules out the parser's total fallback cases
-// and trailing garbage at the public API boundary.
+// Strict recognizer for the public grammar. Unlike the total parser above,
+// these functions fail instead of inventing Num(0) at invalid positions.
+function parseDigitsEnd(s: seq<char>, i: nat): (j: nat)
+  requires i <= |s|
+  ensures i <= j <= |s|
+  decreases |s| - i
+{
+  if i < |s| && isDigit(s[i]) then parseDigitsEnd(s, i + 1) else i
+}
+
+function parseNumberStrict(s: seq<char>, i: nat): (r: (bool, nat))
+  requires i <= |s|
+  ensures i <= r.1 <= |s|
+  ensures r.0 ==> i < r.1
+{
+  if i < |s| && isDigit(s[i]) then (true, parseDigitsEnd(s, i + 1)) else (false, i)
+}
+
+function parseFactorStrict(s: seq<char>, i: nat): (r: (bool, nat))
+  requires i <= |s|
+  ensures i <= r.1 <= |s|
+  ensures r.0 ==> i < r.1
+  decreases |s| - i, 1
+{
+  if i < |s| && isDigit(s[i]) then
+    parseNumberStrict(s, i)
+  else if i < |s| && s[i] == '(' then
+    var pe := parseExprStrict(s, i + 1);
+    if pe.0 && pe.1 < |s| && s[pe.1] == ')' then (true, pe.1 + 1) else (false, i)
+  else
+    (false, i)
+}
+
+function parseTermRestStrict(s: seq<char>, j: nat): (r: (bool, nat))
+  requires j <= |s|
+  ensures j <= r.1 <= |s|
+  decreases |s| - j, 2
+{
+  if j < |s| && (s[j] == '*' || s[j] == '/') then
+    var pf := parseFactorStrict(s, j + 1);
+    if pf.0 then parseTermRestStrict(s, pf.1) else (false, j)
+  else
+    (true, j)
+}
+
+function parseTermStrict(s: seq<char>, i: nat): (r: (bool, nat))
+  requires i <= |s|
+  ensures i <= r.1 <= |s|
+  decreases |s| - i, 3
+{
+  var pf := parseFactorStrict(s, i);
+  if pf.0 then parseTermRestStrict(s, pf.1) else (false, i)
+}
+
+function parseExprRestStrict(s: seq<char>, j: nat): (r: (bool, nat))
+  requires j <= |s|
+  ensures j <= r.1 <= |s|
+  decreases |s| - j, 4
+{
+  if j < |s| && (s[j] == '+' || s[j] == '-') then
+    var pt := parseTermStrict(s, j + 1);
+    if pt.0 then parseExprRestStrict(s, pt.1) else (false, j)
+  else
+    (true, j)
+}
+
+function parseExprStrict(s: seq<char>, i: nat): (r: (bool, nat))
+  requires i <= |s|
+  ensures i <= r.1 <= |s|
+  decreases |s| - i, 5
+{
+  var pt := parseTermStrict(s, i);
+  if pt.0 then parseExprRestStrict(s, pt.1) else (false, i)
+}
+
+// A LeetCode-valid input is a full strict parse with no division by zero.
 predicate ValidExpression(s: seq<char>) {
-  parseExpr(s, 0).1 == |s| && NoDivByZero(parseExpr(s, 0).0)
+  var p := parseExprStrict(s, 0);
+  p.0 && p.1 == |s| && NoDivByZero(parseExpr(s, 0).0)
+}
+
+lemma RejectTrailingOperator()
+  ensures !ValidExpression("1+")
+{
 }
 
 // End-to-end evaluator: parse the whole valid string, then take its

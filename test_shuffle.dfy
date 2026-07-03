@@ -93,24 +93,22 @@ lemma {:axiom} subset_set_of_seq<T>(s1: seq<T>, s2: seq<T>)
 
 method getRandomDataEntry<T(==)>(m_workList: array<T>, avoidSet: seq<T>) returns (e: T)
   requires m_workList.Length > 0
-  ensures e in old(m_workList[..])
-  //  ensures set_of_seq(avoidSet) < set_of_seq(m_workList[..]) ==> e !in avoidSet
-  //  ensures avoidSet < m_workList[..] ==> e in m_workList[..]
+  requires exists i :: 0 <= i < m_workList.Length && m_workList[i] !in avoidSet
+  ensures e in old(m_workList[..]) && e !in avoidSet
 {
-  var k := m_workList.Length - 1;
-
-  while (k >= 0)
+  var k := 0;
+  while k < m_workList.Length
+    invariant 0 <= k <= m_workList.Length
+    invariant forall i :: 0 <= i < k ==> m_workList[i] in avoidSet
   {
-    var i := random(0, k);
-    assert i >= 0 && i <= k;
-
-    e := m_workList[i];
-    if (e !in avoidSet) {
+    e := m_workList[k];
+    if e !in avoidSet {
       return e;
     }
-
-    k := k - 1;
+    k := k + 1;
   }
 
-  return m_workList[0];
+  var i :| 0 <= i < m_workList.Length && m_workList[i] !in avoidSet;
+  assert i < k;
+  assert false;
 }

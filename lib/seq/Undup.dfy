@@ -1,4 +1,5 @@
 include "../Seq.dfy"
+include "Subseq.dfy"
 
 import opened Seq
 
@@ -46,21 +47,21 @@ lemma UndupDistinctIdentity<T>(xs: seq<T>)
   }
 }
 
-// A full Subseq(Undup(xs), xs) theorem is the remaining order-style gap.
-// The suffix-recursive definition needs a concat/append subsequence lemma that
-// is not currently exported by lib/seq/Subseq.dfy.
-// lemma SubseqUndup<T>(xs: seq<T>)
-//   ensures Subseq(Undup(xs), xs)
-// {
-//   reveal Subseq();
-//   reveal Undup();
-//   if |xs| == 0 {
-//   } else if Last(xs) in RemoveLast(xs) {
-//     SubseqRemoveLast(xs);
-//     SubseqTrans(Undup(xs), RemoveLast(xs), xs);
-//   } else {
-
-//     // SubseqRemoveLast(xs);
-//     // assume false;
-//   }
-// }
+lemma SubseqUndup<T>(xs: seq<T>)
+  ensures Subseq(Undup(xs), xs)
+{
+  reveal Undup();
+  if |xs| == 0 {
+    assert Undup(xs) == xs;
+    SubseqRefl(xs);
+  } else {
+    SubseqUndup(RemoveLast(xs));
+    if Last(xs) in RemoveLast(xs) {
+      SubseqRemoveLast(xs);
+      SubseqTrans(Undup(RemoveLast(xs)), RemoveLast(xs), xs);
+    } else {
+      SubseqAppendSame(Undup(RemoveLast(xs)), RemoveLast(xs), Last(xs));
+      ConcatRemoveLastLast(xs);
+    }
+  }
+}
