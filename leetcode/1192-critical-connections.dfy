@@ -12,10 +12,11 @@
 //   1. CriticalConnections returns EXACTLY the set of bridges (both directions
 //      of the set equality), via a verified reachability closure.
 //
-//   2. THE DEEPER THEOREM (why Tarjan's O(n) algorithm works): on a DFS tree --
-//      a rooted spanning tree in which every non-tree edge joins an ancestor to
-//      a descendant -- a tree edge (u = par[v], v) is a bridge iff no edge
-//      escapes v's subtree, equivalently iff low[v] > disc[u]. See
+//   2. THE DEEPER THEOREM (the graph-theoretic bridge criterion used by
+//      Tarjan-style algorithms): on a DFS tree -- a rooted spanning tree in
+//      which every non-tree edge joins an ancestor to a descendant -- a tree
+//      edge (u = par[v], v) is a bridge iff no edge escapes v's subtree,
+//      equivalently iff low[v] > disc[u]. See
 //      BridgeCharacterization (cut form), TarjanBridge (criterion form), and
 //      TarjanBridgeLow (literal low[v] > disc[u]), all reduced to the same
 //      IsBridge. TarjanExample runs the criterion on the LeetCode graph and

@@ -1,14 +1,18 @@
 module Random {
   method {:axiom} random(a: int, b: int) returns (r: int)
+    // Bounded nondeterministic choice only. No distribution, independence, or
+    // uniformity property is specified.
     requires a <= b
     ensures a <= r <= b
 }
 
 method {:axiom} rand(n: int) returns (r: int)
+  // Bounded nondeterministic choice only, not a probabilistic random source.
   requires 0 <= n
   ensures 0 <= r <= n
 
 method {:axiom} rand2(n: int) returns (r: int)
+  // Same spec surface as rand: each call may return any value in range.
   requires 0 <= n
   ensures 0 <= r <= n
 

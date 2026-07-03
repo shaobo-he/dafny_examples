@@ -1,4 +1,6 @@
 method {:axiom} random(a: int, b: int) returns (r: int)
+  // Bounded nondeterministic choice only. This axiom does not specify a
+  // probability distribution, independence between calls, or uniformity.
   ensures a <= b ==> a <= r <= b
 
 method swap<T>(a: array<T>, i: int, j: int)
@@ -68,6 +70,9 @@ lemma suffix_multiset_subset<T>(s: seq<T>, k: int)
 }
 
 method getRandomDataEntry<T(==)>(m_workList: array<T>, avoidSet: seq<T>) returns (e: T)
+  // Despite the historical name, the verified contract is selection of some
+  // non-avoided entry while preserving the work-list multiset, not probabilistic
+  // randomness or uniform sampling.
   modifies m_workList
   requires m_workList.Length > 0
   requires uniq(m_workList[..])
@@ -116,6 +121,8 @@ method getRandomDataEntry<T(==)>(m_workList: array<T>, avoidSet: seq<T>) returns
 
 method fillWithRandomDataEntries<T(==, 0)>(m_workList: array<T>, n: int, avoidSet: seq<T>)
   returns (out: array<T>)
+  // Verified as bounded nondeterministic selection without replacement from
+  // entries outside avoidSet. No distributional property is specified.
   modifies m_workList
   // requires m_workList != null
   requires uniq(m_workList[..])

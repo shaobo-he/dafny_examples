@@ -345,6 +345,64 @@ lemma VolNonneg(H: seq<seq<int>>, hi: int, k: nat)
   GridSumNonneg(G, H, 0);
 }
 
+// Boundary-only grids have no interior basin. The height map itself is the
+// greatest valid water configuration, and its trapped volume is zero.
+lemma BoundaryOnlyEveryCellBoundary(H: seq<seq<int>>)
+  requires Rect(H)
+  requires |H| <= 2 || |H[0]| <= 2
+  ensures forall i, j :: InGrid(H, i, j) ==> Boundary(H, i, j)
+{
+}
+
+lemma BoundaryOnlyWaterEqualsHeight(H: seq<seq<int>>, L: seq<seq<int>>)
+  requires Rect(H) && IsWater(H, L)
+  requires |H| <= 2 || |H[0]| <= 2
+  ensures forall i, j :: InGrid(H, i, j) ==> L[i][j] == H[i][j]
+{
+  BoundaryOnlyEveryCellBoundary(H);
+}
+
+lemma RowSumPointwiseSame(a: seq<int>, b: seq<int>)
+  requires |a| == |b|
+  requires forall k :: 0 <= k < |a| ==> a[k] == b[k]
+  ensures RowSum(a, b) == 0
+{
+  if |a| > 0 {
+    assert a[0] - b[0] == 0;
+    assert forall k :: 0 <= k < |a[1..]| ==> a[1..][k] == b[1..][k];
+    RowSumPointwiseSame(a[1..], b[1..]);
+  }
+}
+
+lemma GridSumPointwiseSame(L: seq<seq<int>>, H: seq<seq<int>>, i: nat)
+  requires |L| == |H| && i <= |L|
+  requires forall r :: 0 <= r < |L| ==> |L[r]| == |H[r]|
+  requires forall a, b :: 0 <= a < |L| && 0 <= b < |L[a]| ==> L[a][b] == H[a][b]
+  ensures GridSum(L, H, i) == 0
+  decreases |L| - i
+{
+  if i < |L| {
+    RowSumPointwiseSame(L[i], H[i]);
+    GridSumPointwiseSame(L, H, i + 1);
+  }
+}
+
+lemma BoundaryOnlyHeightIsGreatestWater(H: seq<seq<int>>)
+  requires Rect(H)
+  requires |H| <= 2 || |H[0]| <= 2
+  ensures IsWater(H, H)
+  ensures forall L' :: IsWater(H, L') ==>
+                         forall i, j :: InGrid(H, i, j) ==> L'[i][j] <= H[i][j]
+  ensures Vol(H, H) == 0
+{
+  BoundaryOnlyEveryCellBoundary(H);
+  GridSumPointwiseSame(H, H, 0);
+  forall L' | IsWater(H, L')
+    ensures forall i, j :: InGrid(H, i, j) ==> L'[i][j] <= H[i][j]
+  {
+    BoundaryOnlyWaterEqualsHeight(H, L');
+  }
+}
 // One relaxation round strictly lowers the total volume (termination measure).
 lemma StepDecreasesVol(H: seq<seq<int>>, hi: int, k: nat, wi: int, wj: int)
   requires Rect(H)

@@ -12,6 +12,7 @@
 // to the denotational escape-level specification in
 // 0407-trapping-rain-water-ii-correct.dfy.
 
+include "0407-trapping-rain-water-ii-correct.dfy"
 include "../lib/adt/PriorityQueue.dfy"
 
 import opened PriorityQueue
@@ -26,6 +27,27 @@ lemma SubsetCard(a: set<(int, int)>, b: set<(int, int)>)
   }
 }
 
+lemma BoundaryOnlyAllVisited(m: int, n: int, AC: set<(int, int)>, visited: set<(int, int)>)
+  requires m >= 1 && n >= 1
+  requires AC == set a, b | 0 <= a < m && 0 <= b < n :: (a, b)
+  requires visited <= AC
+  requires m <= 2 || n <= 2
+  requires forall a, b :: (0 <= a < m && 0 <= b < n &&
+                           (a == 0 || a == m - 1 || b == 0 || b == n - 1)) ==> (a, b) in visited
+  ensures visited == AC
+{
+  forall p | p in AC
+    ensures p in visited
+  {
+    assert 0 <= p.0 < m && 0 <= p.1 < n;
+    if m <= 2 {
+      assert p.0 == 0 || p.0 == m - 1;
+    } else {
+      assert n <= 2;
+      assert p.1 == 0 || p.1 == n - 1;
+    }
+  }
+}
 // One frontier expansion step onto neighbour (x, y). Either (x, y) is out of
 // bounds / already seen (nothing changes) or it is trapped and pushed. In both
 // cases the termination measure (|AC| - |visited|) + Size(heap) is preserved.
@@ -45,6 +67,7 @@ method ProcessNeighbor(heightMap: seq<seq<int>>, m: int, n: int, ghost AC: set<(
   ensures visited <= visited' <= AC
   ensures forall e :: e in Items(heap') ==> e.1 in visited'
   ensures (|AC| - |visited'|) + Size(heap') == (|AC| - |visited|) + Size(heap)
+  ensures (((0 <= x < m && 0 <= y < n) ==> (x, y) in visited)) ==> water' == water && visited' == visited && heap' == heap
 {
   if 0 <= x < m && 0 <= y < n && (x, y) !in visited {
     var height := heightMap[x][y];
@@ -63,6 +86,7 @@ method HeapFloodNonnegative(heightMap: seq<seq<int>>, n: int) returns (water: in
   requires |heightMap| >= 1 && n >= 1
   requires forall i :: 0 <= i < |heightMap| ==> |heightMap[i]| == n
   ensures water >= 0
+  ensures (|heightMap| <= 2 || n <= 2) ==> water == 0
 {
   var m := |heightMap|;
   ghost var AC := set a, b | 0 <= a < m && 0 <= b < n :: (a, b);
@@ -77,6 +101,8 @@ method HeapFloodNonnegative(heightMap: seq<seq<int>>, n: int) returns (water: in
     invariant HeapOrdered(heap)
     invariant visited <= AC
     invariant forall e :: e in Items(heap) ==> e.1 in visited
+    invariant forall a, b :: (0 <= a < i && 0 <= b < n &&
+                               (a == 0 || a == m - 1 || b == 0 || b == n - 1)) ==> (a, b) in visited
   {
     var j := 0;
     while j < n
@@ -84,6 +110,10 @@ method HeapFloodNonnegative(heightMap: seq<seq<int>>, n: int) returns (water: in
       invariant HeapOrdered(heap)
       invariant visited <= AC
       invariant forall e :: e in Items(heap) ==> e.1 in visited
+      invariant forall a, b :: (0 <= a < i && 0 <= b < n &&
+                                 (a == 0 || a == m - 1 || b == 0 || b == n - 1)) ==> (a, b) in visited
+      invariant forall b :: (0 <= b < j &&
+                              (i == 0 || i == m - 1 || b == 0 || b == n - 1)) ==> (i, b) in visited
     {
       if (i == 0 || i == m - 1 || j == 0 || j == n - 1) && (i, j) !in visited {
         assert (i, j) in AC;
@@ -95,6 +125,9 @@ method HeapFloodNonnegative(heightMap: seq<seq<int>>, n: int) returns (water: in
     }
     i := i + 1;
   }
+  if m <= 2 || n <= 2 {
+    BoundaryOnlyAllVisited(m, n, AC, visited);
+  }
 
   // Flood inward, always from the current lowest frontier level.
   while heap.Node?
@@ -102,6 +135,7 @@ method HeapFloodNonnegative(heightMap: seq<seq<int>>, n: int) returns (water: in
     invariant HeapOrdered(heap)
     invariant visited <= AC
     invariant forall e :: e in Items(heap) ==> e.1 in visited
+    invariant (m <= 2 || n <= 2) ==> visited == AC && water == 0
     decreases (|AC| - |visited|) + Size(heap)
   {
     var h := heap.key;
@@ -114,5 +148,33 @@ method HeapFloodNonnegative(heightMap: seq<seq<int>>, n: int) returns (water: in
     water, visited, heap := ProcessNeighbor(heightMap, m, n, AC, h, ci, cj - 1, water, visited, heap);
     water, visited, heap := ProcessNeighbor(heightMap, m, n, AC, h, ci, cj + 1, water, visited, heap);
     SubsetCard(visited, AC);
+  }
+}
+// Public heap entry point with an honest bridge to the denotational spec.  For
+// general grids this exposes the currently verified heap facts.  On grids with
+// no interior cells, the heap result is proved to be the same exact zero-volume
+// escape-level solution specified by TrappingRainWater.
+method HeapFloodTrappingRainWater(heightMap: seq<seq<int>>) returns (water: int)
+  requires Rect(heightMap)
+  requires forall i, j :: InGrid(heightMap, i, j) ==> 0 <= heightMap[i][j] <= 20000
+  ensures water >= 0
+  ensures (|heightMap| <= 2 || |heightMap[0]| <= 2) ==>
+            exists L :: IsWater(heightMap, L) &&
+                        (forall L' :: IsWater(heightMap, L') ==>
+                           forall i, j :: InGrid(heightMap, i, j) ==> L'[i][j] <= L[i][j]) &&
+                        water == Vol(L, heightMap)
+{
+  water := HeapFloodNonnegative(heightMap, |heightMap[0]|);
+  if |heightMap| <= 2 || |heightMap[0]| <= 2 {
+    BoundaryOnlyHeightIsGreatestWater(heightMap);
+    assert water == 0;
+    assert IsWater(heightMap, heightMap);
+    assert forall L' :: IsWater(heightMap, L') ==>
+                         forall i, j :: InGrid(heightMap, i, j) ==> L'[i][j] <= heightMap[i][j];
+    assert Vol(heightMap, heightMap) == 0;
+    assert exists L :: IsWater(heightMap, L) &&
+                       (forall L' :: IsWater(heightMap, L') ==>
+                          forall i, j :: InGrid(heightMap, i, j) ==> L'[i][j] <= L[i][j]) &&
+                       water == Vol(L, heightMap);
   }
 }

@@ -12,7 +12,7 @@ small reusable library of lemmas and data-structure helpers.
   sorted array, merge k sorted lists, best-time-to-buy-and-sell-stock, LRU
   cache, basic calculator III, burst balloons, trapping rain water (1-D exact
   volume; 2-D exact volume via the escape-level fixpoint), median of two sorted
-  arrays (O(log) partition search proven exact), critical connections (bridges
+  arrays (partition-search value correctness, no verified cost model), critical connections (bridges
   proven to be exactly the edges whose removal disconnects their endpoints,
   plus Tarjan's low[v] > disc[u] criterion proven equivalent on a DFS tree,
   plus a verified DFS that constructs such a tree -- no cross edges and all),
@@ -25,7 +25,8 @@ small reusable library of lemmas and data-structure helpers.
   - `adt/` — `BinaryTree`, `BST`, `Graph` (topological sort via Kahn's BFS),
     `PriorityQueue` (min leftist heap).
 - Root-level `.dfy` files — small standalone experiments (vector class, set
-  abstractions, shuffle/random-entry methods).
+  abstractions, bounded-choice permutation/selection methods; no probabilistic
+  uniformity specs).
 
 ## Toolchain
 

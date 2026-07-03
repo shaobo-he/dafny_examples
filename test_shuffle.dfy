@@ -1,6 +1,8 @@
 
 method {:axiom} random(a: int, b: int) returns (r: int)
   //  requires a <= b
+  // Bounded nondeterministic choice only. This axiom does not specify a
+  // probability distribution, independence between calls, or uniformity.
   ensures a <= b ==> a <= r <= b
 
 lemma eqMultiset_t<T>(t: T, s1: seq<T>, s2: seq<T>)
@@ -48,6 +50,8 @@ method swap<T>(a: array<T>, i: int, j: int)
 }
 
 method getAllShuffledDataEntries<T(0)>(m_dataEntries: array<T>) returns (result: array<T>)
+  // Historical "shuffled" name: the verified result is a permutation of the
+  // input. No uniformity or probability distribution is specified.
   // requires m_dataEntries != null
   // ensures result != null
   ensures fresh(result)
@@ -92,6 +96,8 @@ lemma {:axiom} subset_set_of_seq<T>(s1: seq<T>, s2: seq<T>)
   ensures forall x :: x in s1 ==> x in s2
 
 method getRandomDataEntry<T(==)>(m_workList: array<T>, avoidSet: seq<T>) returns (e: T)
+  // Verified as finding some entry outside avoidSet. This simple version is
+  // deterministic linear search despite the historical method name.
   requires m_workList.Length > 0
   requires exists i :: 0 <= i < m_workList.Length && m_workList[i] !in avoidSet
   ensures e in old(m_workList[..]) && e !in avoidSet

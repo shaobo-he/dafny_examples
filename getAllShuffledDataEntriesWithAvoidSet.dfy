@@ -1,4 +1,6 @@
 method {:axiom} random(a: int, b: int) returns (r: int)
+  // Bounded nondeterministic choice only. This axiom does not specify a
+  // probability distribution, independence between calls, or uniformity.
   ensures a <= b ==> a <= r <= b
 
 method swap<T>(a: array<T>, i: int, j: int)
@@ -50,6 +52,9 @@ lemma suffix_multiset_subset<T>(s: seq<T>, k: int)
 
 method getAllShuffledDataEntriesWithAvoidSet<T(==, 0)>(m_workList: array<T>, avoidSet: set<T>)
   returns (result: array<T>)
+  // Historical "shuffled" name: the proof establishes a permutation with the
+  // avoid-set entries moved out of the protected prefix. It does not prove
+  // uniform shuffling or any other probabilistic property.
   // requires m_workList != null
   requires uniq(m_workList[..])
   requires m_workList.Length >= 2 * |avoidSet|

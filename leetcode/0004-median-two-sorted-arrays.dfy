@@ -2,9 +2,11 @@
 // LeetCode 4: Median of Two Sorted Arrays -- TRUE correctness.
 //
 // The median is defined denotationally, on the sorted merge of the two inputs.
-// The hard part (this is a "Hard" problem because of it) is the O(log(m+n))
-// "k-th smallest" recursion that avoids building the merge. We prove that
+// The hard part (this is a "Hard" problem because of it) is the partition-style
+// "k-th smallest" recursion that avoids building the merge. We prove that the
 // recursion returns exactly Merge(a, b)[k-1], hence the median formula is exact.
+// There is no verified cost model here; runtime comments describe the intended
+// algorithmic shape, not a proven complexity theorem.
 
 function Min(a: int, b: int): int { if a <= b then a else b }
 function Max(a: int, b: int): int { if a >= b then a else b }
@@ -387,7 +389,7 @@ lemma C1FalseUp(a: seq<int>, b: seq<int>, half: int, i: int, i2: int)
   }
 }
 
-// The median in doubled-integer form, via the O(log) partition binary search.
+// The median in doubled-integer form, via the partition-search implementation.
 // Requires |a| <= |b| (so j = half - i is always a valid index into b).
 method MedianX2Search(a: seq<int>, b: seq<int>) returns (r: int)
   requires Sorted(a) && Sorted(b) && |a| + |b| >= 1 && |a| <= |b|

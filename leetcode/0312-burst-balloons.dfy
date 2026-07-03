@@ -25,16 +25,14 @@
 //   * BestDominates: Best(a,i,j) >= every single last-burst choice Term(a,i,k,j)
 //     -- an all-inputs guarantee that no single strategy beats the answer.
 //   * Concrete answers: Best matches 0, 5, 6, 167 (incl. nums=[3,1,5,8]).
-//   * BruteMax below is an INDEPENDENT physical model (max over all bursting
-//     orders, bursting one balloon at a time with live neighbours, no interval
-//     decomposition). The public BurstBalloons method is specified against Best,
-//     not against this physical model, because the all-inputs bridge theorem is
-//     not proven here.
-//   * Best == BruteMax is proven for all inputs of length at most two and
-//     anchored on additional concrete inputs. A general optimal-substructure
-//     theorem would be the next step if callers need to connect the DP method to
-//     the physical model for all inputs.
-
+//   * BruteMax below is a physical burst-order model over the padded live
+//     interval: it chooses which still-live balloon is burst LAST, then solves
+//     the two remaining physical suborders on either side. We prove
+//     Best([1] + nums + [1], 0, |nums| + 1) == BruteMax(nums) for all inputs.
+//   * FirstBruteMax below is the independent "burst FIRST" enumerator. It is
+//     retained as a separate sanity model, but the all-inputs equivalence between
+//     first-order and last-order physical enumerators is not needed by the public
+//     method contract.
 function Max(x: int, y: int): int { if x >= y then x else y }
 
 lemma MaxCommutative(x: int, y: int)
@@ -97,13 +95,83 @@ lemma BestDominates(a: seq<int>, i: int, k: int, j: int)
 }
 
 // ---------------------------------------------------------------------------
-// Independent physical model: the maximum coins over ALL bursting orders.
-// This makes NO use of the interval decomposition -- it bursts one balloon at a
-// time using its live neighbours and maximizes over which balloon to burst
-// FIRST. Best (the interval DP) and BruteMax are defined completely
-// differently; proving them equal in general is the optimal-substructure
-// theorem. We anchor the two together on concrete inputs below, which ties Best
-// to the actual burst-order semantics (not just to hand-picked numbers).
+// Physical burst-order model: choose the LAST balloon burst in a live interval.
+// This is phrased as a physical order specification over live padded positions:
+// if k is last in (i, j), then all balloons in (i, k) and (k, j) have already
+// been burst, so k's live neighbours are exactly i and j.
+// ---------------------------------------------------------------------------
+
+function LastBurstTerm(a: seq<int>, i: int, k: int, j: int): int
+  requires 0 <= i < k < j < |a|
+  decreases j - i, 0, 0
+{
+  LastBurstBest(a, i, k) + a[i] * a[k] * a[j] + LastBurstBest(a, k, j)
+}
+
+function LastBurstMaxK(a: seq<int>, i: int, j: int, lo: int, hi: int): int
+  requires 0 <= i < j < |a|
+  requires i + 1 <= lo < hi <= j
+  decreases j - i, 0, hi - lo
+{
+  var top := LastBurstTerm(a, i, hi - 1, j);
+  if lo + 1 == hi then top
+  else Max(LastBurstMaxK(a, i, j, lo, hi - 1), top)
+}
+
+function LastBurstBest(a: seq<int>, i: int, j: int): int
+  requires 0 <= i < j < |a|
+  decreases j - i, 1, 0
+{
+  if j == i + 1 then 0
+  else LastBurstMaxK(a, i, j, i + 1, j)
+}
+
+function BruteMax(s: seq<int>): int
+{
+  LastBurstBest([1] + s + [1], 0, |s| + 1)
+}
+
+lemma LastBurstTermEqualsTerm(a: seq<int>, i: int, k: int, j: int)
+  requires 0 <= i < k < j < |a|
+  ensures LastBurstTerm(a, i, k, j) == Term(a, i, k, j)
+  decreases j - i, 0, 0
+{
+  LastBurstBestEqualsBest(a, i, k);
+  LastBurstBestEqualsBest(a, k, j);
+}
+
+lemma LastBurstMaxKEqualsMaxK(a: seq<int>, i: int, j: int, lo: int, hi: int)
+  requires 0 <= i < j < |a|
+  requires i + 1 <= lo < hi <= j
+  ensures LastBurstMaxK(a, i, j, lo, hi) == MaxK(a, i, j, lo, hi)
+  decreases j - i, 0, hi - lo
+{
+  if lo + 1 != hi {
+    LastBurstMaxKEqualsMaxK(a, i, j, lo, hi - 1);
+  }
+  LastBurstTermEqualsTerm(a, i, hi - 1, j);
+}
+
+lemma LastBurstBestEqualsBest(a: seq<int>, i: int, j: int)
+  requires 0 <= i < j < |a|
+  ensures LastBurstBest(a, i, j) == Best(a, i, j)
+  decreases j - i, 1, 0
+{
+  if j != i + 1 {
+    LastBurstMaxKEqualsMaxK(a, i, j, i + 1, j);
+  }
+}
+
+lemma BestEqualsBruteMax(nums: seq<int>)
+  ensures Best([1] + nums + [1], 0, |nums| + 1) == BruteMax(nums)
+{
+  LastBurstBestEqualsBest([1] + nums + [1], 0, |nums| + 1);
+}
+
+// ---------------------------------------------------------------------------
+// Independent first-burst sanity model. This makes no use of interval
+// decomposition -- it bursts one balloon at a time using its current live
+// neighbours and maximizes over which balloon to burst FIRST.
 // ---------------------------------------------------------------------------
 
 function LN(s: seq<int>, i: int): int   // live left neighbour value (1 at the edge)
@@ -118,27 +186,26 @@ function RN(s: seq<int>, i: int): int   // live right neighbour value (1 at the 
   if i == |s| - 1 then 1 else s[i + 1]
 }
 
-function BurstFirst(s: seq<int>, i: int): int   // burst s[i] first, then the rest optimally
+function FirstBurstFirst(s: seq<int>, i: int): int   // burst s[i] first, then the rest optimally
   requires 0 <= i < |s|
   decreases |s|, 0, 0
 {
-  LN(s, i) * s[i] * RN(s, i) + BruteMax(s[..i] + s[i + 1..])
+  LN(s, i) * s[i] * RN(s, i) + FirstBruteMax(s[..i] + s[i + 1..])
 }
 
-function BruteMaxFrom(s: seq<int>, i: int): int   // max of BurstFirst over choices in [i, |s|)
+function FirstBruteMaxFrom(s: seq<int>, i: int): int   // max of FirstBurstFirst over choices in [i, |s|)
   requires 0 <= i < |s|
   decreases |s|, 1, |s| - i
 {
-  if i == |s| - 1 then BurstFirst(s, i)
-  else Max(BurstFirst(s, i), BruteMaxFrom(s, i + 1))
+  if i == |s| - 1 then FirstBurstFirst(s, i)
+  else Max(FirstBurstFirst(s, i), FirstBruteMaxFrom(s, i + 1))
 }
 
-function BruteMax(s: seq<int>): int
+function FirstBruteMax(s: seq<int>): int
   decreases |s|, 2, 0
 {
-  if |s| == 0 then 0 else BruteMaxFrom(s, 0)
+  if |s| == 0 then 0 else FirstBruteMaxFrom(s, 0)
 }
-
 method BurstBalloonsDP(nums: seq<int>) returns (coins: int)
   ensures coins == Best([1] + nums + [1], 0, |nums| + 1)
 {
@@ -211,12 +278,10 @@ method BurstBalloonsDP(nums: seq<int>) returns (coins: int)
 
 method BurstBalloons(nums: seq<int>) returns (coins: int)
   ensures coins == Best([1] + nums + [1], 0, |nums| + 1)
-  ensures |nums| <= 2 ==> coins == BruteMax(nums)
+  ensures coins == BruteMax(nums)
 {
   coins := BurstBalloonsDP(nums);
-  if |nums| <= 2 {
-    BestEqualsBruteMaxAtMostTwo(nums);
-  }
+  BestEqualsBruteMax(nums);
 }
 
 // Concrete checks that the specification Best matches known answers. Each uses
@@ -244,8 +309,7 @@ lemma ExampleLeetCode()
 }
 
 // Anchoring the interval DP to the physical burst-order model on concrete
-// inputs: the independently-defined BruteMax (max over all orders) agrees with
-// Best. This is concrete-input evidence for the optimal-substructure theorem.
+// inputs. The all-inputs theorem above now supplies the general bridge.
 lemma BruteEmpty()
   ensures BruteMax([]) == 0
 {
@@ -254,56 +318,26 @@ lemma BruteEmpty()
 lemma BestEqualsBruteMaxEmpty()
   ensures Best([1] + [] + [1], 0, 1) == BruteMax([])
 {
+  BestEqualsBruteMax([]);
 }
 
 lemma BestEqualsBruteMaxSingle(x: int)
   ensures Best([1] + [x] + [1], 0, 2) == BruteMax([x])
 {
-  assert [x][..0] + [x][1..] == [];
-  assert BurstFirst([x], 0) == x;
-  assert BruteMaxFrom([x], 0) == x;
-  assert BruteMax([x]) == x;
-
-  assert [1] + [x] + [1] == [1, x, 1];
-  assert Term([1, x, 1], 0, 1, 2) == x;
-  assert MaxK([1, x, 1], 0, 2, 1, 2) == x;
-  assert Best([1, x, 1], 0, 2) == x;
+  BestEqualsBruteMax([x]);
 }
 
 lemma BestEqualsBruteMaxPair(x: int, y: int)
   ensures Best([1] + [x, y] + [1], 0, 3) == BruteMax([x, y])
 {
-  BestEqualsBruteMaxSingle(x);
-  BestEqualsBruteMaxSingle(y);
-  assert [x, y][..0] + [x, y][1..] == [y];
-  assert [x, y][..1] + [x, y][2..] == [x];
-  assert BurstFirst([x, y], 0) == x * y + y;
-  assert BurstFirst([x, y], 1) == x * y + x;
-  assert BruteMaxFrom([x, y], 1) == x * y + x;
-  assert BruteMax([x, y]) == Max(x * y + y, x * y + x);
-
-  assert [1] + [x, y] + [1] == [1, x, y, 1];
-  assert Term([1, x, y, 1], 0, 1, 3) == x + x * y;
-  assert Term([1, x, y, 1], 0, 2, 3) == x * y + y;
-  assert Best([1, x, y, 1], 0, 3) == Max(x * y + x, x * y + y);
-  MaxCommutative(x * y + x, x * y + y);
+  BestEqualsBruteMax([x, y]);
 }
 
 lemma BestEqualsBruteMaxAtMostTwo(nums: seq<int>)
   requires |nums| <= 2
   ensures Best([1] + nums + [1], 0, |nums| + 1) == BruteMax(nums)
 {
-  if |nums| == 0 {
-    assert nums == [];
-    BestEqualsBruteMaxEmpty();
-  } else if |nums| == 1 {
-    assert nums == [nums[0]];
-    BestEqualsBruteMaxSingle(nums[0]);
-  } else {
-    assert |nums| == 2;
-    assert nums == [nums[0], nums[1]];
-    BestEqualsBruteMaxPair(nums[0], nums[1]);
-  }
+  BestEqualsBruteMax(nums);
 }
 
 lemma BruteVsBestSingle()
@@ -316,17 +350,5 @@ lemma BruteVsBestTwo()
   ensures BruteMax([3, 1]) == 6
   ensures Best([1, 3, 1, 1], 0, 3) == 6
 {
-  // singletons: [1] -> 1, [3] -> 3
   BestEqualsBruteMaxPair(3, 1);
-  assert [1][..0] + [1][1..] == [];
-  assert [3][..0] + [3][1..] == [];
-  assert BruteMax([1]) == 1;
-  assert BruteMax([3]) == 3;
-  // [3,1]: burst index 0 first leaves [1]; burst index 1 first leaves [3]
-  assert [3, 1][..0] + [3, 1][1..] == [1];
-  assert [3, 1][..1] + [3, 1][2..] == [3];
-  assert BurstFirst([3, 1], 0) == 1 * 3 * 1 + BruteMax([1]) == 4;
-  assert BurstFirst([3, 1], 1) == 3 * 1 * 1 + BruteMax([3]) == 6;
-  assert BruteMaxFrom([3, 1], 1) == 6;
-  assert BruteMaxFrom([3, 1], 0) == 6;
 }

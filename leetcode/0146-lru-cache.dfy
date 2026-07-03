@@ -1,8 +1,11 @@
 // Author: Shaobo He
 // LeetCode 146: LRU Cache
 //
-// Functional-correctness proof of an LRU cache (we model the *behaviour*, not
-// the O(1) time bound, which Dafny does not reason about).
+// Functional-correctness proof of an LRU cache. The spec surface is deliberately
+// behavioral: it models map contents, MRU/LRU order, and eviction. It does not
+// verify the LeetCode O(1) cost contract, and the executable model here uses a
+// sequence, so this file should not be read as a verified constant-time
+// implementation.
 //
 // State is a `seq<(int,int)>` of (key,value) entries in most-recently-used-first
 // order, with a class invariant that keys are distinct and the size never

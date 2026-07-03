@@ -2,8 +2,9 @@
 // A verified functional min-priority-queue (leftist heap). Each element is a
 // (key, data) pair ordered by the integer key. FindMin returns an element of
 // minimum key; Insert / DeleteMin / Merge preserve both the heap order and the
-// multiset of elements. (The leftist rank keeps operations O(log n); we verify
-// the functional contract, not the balance bound.)
+// multiset of elements. This is the usual leftist-heap shape intended to support
+// logarithmic operations, but this file verifies the functional contract only;
+// it does not prove a cost or balance theorem.
 
 module PriorityQueue {
 
