@@ -50,8 +50,9 @@ method swap<T>(a: array<T>, i: int, j: int)
 method getAllShuffledDataEntries<T(0)>(m_dataEntries: array<T>) returns (result: array<T>)
   // requires m_dataEntries != null
   // ensures result != null
+  ensures fresh(result)
   ensures result.Length == m_dataEntries.Length
-  ensures multiset(result[..]) == multiset(m_dataEntries[..])
+  ensures multiset(result[..]) == old(multiset(m_dataEntries[..]))
 {
   result := new T[m_dataEntries.Length];
   forall i | 0 <= i < m_dataEntries.Length {
@@ -59,10 +60,13 @@ method getAllShuffledDataEntries<T(0)>(m_dataEntries: array<T>) returns (result:
   }
 
   assert result[..] == m_dataEntries[..];
+  assert m_dataEntries[..] == old(m_dataEntries[..]);
+  assert multiset(result[..]) == old(multiset(m_dataEntries[..]));
 
   var k := result.Length - 1;
   while (k >= 0)
     invariant multiset(result[..]) == multiset(m_dataEntries[..])
+    invariant multiset(result[..]) == old(multiset(m_dataEntries[..]))
   {
     var i := random(0, k);
     assert i >= 0 && i <= k;
@@ -89,6 +93,7 @@ lemma {:axiom} subset_set_of_seq<T>(s1: seq<T>, s2: seq<T>)
 
 method getRandomDataEntry<T(==)>(m_workList: array<T>, avoidSet: seq<T>) returns (e: T)
   requires m_workList.Length > 0
+  ensures e in old(m_workList[..])
   //  ensures set_of_seq(avoidSet) < set_of_seq(m_workList[..]) ==> e !in avoidSet
   //  ensures avoidSet < m_workList[..] ==> e in m_workList[..]
 {

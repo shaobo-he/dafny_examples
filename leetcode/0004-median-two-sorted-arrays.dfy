@@ -150,6 +150,18 @@ lemma SortedMultisetUnique(x: seq<int>, y: seq<int>)
   }
 }
 
+lemma MergeComm(a: seq<int>, b: seq<int>)
+  requires Sorted(a) && Sorted(b)
+  ensures Merge(a, b) == Merge(b, a)
+{
+  MergeSorted(a, b);
+  MergeSorted(b, a);
+  MergeMultiset(a, b);
+  MergeMultiset(b, a);
+  assert multiset(Merge(a, b)) == multiset(Merge(b, a));
+  SortedMultisetUnique(Merge(a, b), Merge(b, a));
+}
+
 // If every element of L is <= every element of R, their merge is the plain
 // concatenation.
 lemma MergeConcat(L: seq<int>, R: seq<int>)
@@ -338,6 +350,13 @@ function MedianX2(a: seq<int>, b: seq<int>): int
   else Kth(a, b, t / 2) + Kth(a, b, t / 2 + 1)
 }
 
+lemma MedianX2Comm(a: seq<int>, b: seq<int>)
+  requires Sorted(a) && Sorted(b) && |a| + |b| >= 1
+  ensures MedianX2(a, b) == MedianX2(b, a)
+{
+  MergeComm(a, b);
+}
+
 // The left-partition condition C1 at index i (j = half - i): a's left maximum
 // does not exceed b's right minimum. Includes the index-range facts so it can
 // be used freely in invariants. Monotone: true for small i, false for large i.
@@ -410,6 +429,19 @@ method MedianX2Search(a: seq<int>, b: seq<int>) returns (r: int)
     r := 2 * LeftVal(a, b, i, j);
   } else {
     r := LeftVal(a, b, i, j) + RightVal(a, b, i, j);
+  }
+}
+
+
+method FindMedianSortedArraysX2(a: seq<int>, b: seq<int>) returns (r: int)
+  requires Sorted(a) && Sorted(b) && |a| + |b| >= 1
+  ensures r == MedianX2(a, b)
+{
+  if |a| <= |b| {
+    r := MedianX2Search(a, b);
+  } else {
+    r := MedianX2Search(b, a);
+    MedianX2Comm(a, b);
   }
 }
 

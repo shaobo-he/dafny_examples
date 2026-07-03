@@ -186,9 +186,11 @@ lemma NotPalindromeTrailingZero(n: int)
 }
 
 method IsPalindrome(n: int) returns (r: bool)
-  requires 0 <= n
-  ensures r == NumericPalindrome(n)
+  ensures r == (0 <= n && NumericPalindrome(n))
 {
+  if n < 0 {
+    return false;
+  }
   if n > 0 && n % 10 == 0 {
     NotPalindromeTrailingZero(n);
     return false;

@@ -27,6 +27,21 @@ lemma CaseFound(numbers: seq<int>, target: int, left: int, right: int)
             numbers[TwoSumF(numbers, target, left, right).0] + numbers[TwoSumF(numbers, target, left, right).1] == target
 {}
 
+lemma CaseShape(numbers: seq<int>, target: int, left: int, right: int)
+  requires Sorted(numbers)
+  requires 0 <= left <= right < |numbers|
+  decreases right - left
+  ensures TwoSumF(numbers, target, left, right).0 == -1 || 0 <= TwoSumF(numbers, target, left, right).0
+{
+  if left == right {
+  } else if numbers[left] + numbers[right] == target {
+  } else if numbers[left] + numbers[right] > target {
+    CaseShape(numbers, target, left, right - 1);
+  } else {
+    CaseShape(numbers, target, left + 1, right);
+  }
+}
+
 lemma CaseNotFound(numbers: seq<int>, target: int, left: int, right: int)
   requires Sorted(numbers)
   requires 0 <= left <= right < |numbers|
@@ -50,8 +65,11 @@ lemma CaseNotFound(numbers: seq<int>, target: int, left: int, right: int)
 method TwoSum(numbers: seq<int>, target: int) returns (r: (int, int))
   requires Sorted(numbers)
   requires |numbers| >= 2
+  ensures r.0 == -1 || 0 <= r.0
   ensures 0 <= r.0 ==> 0 <= r.0 < r.1 < |numbers| &&
                        numbers[r.0] + numbers[r.1] == target
+  ensures (exists i, j :: 0 <= i < j < |numbers| && numbers[i] + numbers[j] == target) ==>
+            0 <= r.0 < r.1 < |numbers| && numbers[r.0] + numbers[r.1] == target
   ensures r.0 == -1 ==> forall i, j :: 0 <= i < j < |numbers| ==> numbers[i] + numbers[j] != target
 {
   /*
@@ -74,6 +92,20 @@ method TwoSum(numbers: seq<int>, target: int) returns (r: (int, int))
   */
 
   r := TwoSumF(numbers, target, 0, |numbers|-1);
+  CaseShape(numbers, target, 0, |numbers|-1);
   CaseFound(numbers, target, 0, |numbers|-1);
   CaseNotFound(numbers, target, 0, |numbers|-1);
+}
+
+method TwoSumLeetCode(numbers: seq<int>, target: int) returns (r: (int, int))
+  requires Sorted(numbers)
+  requires |numbers| >= 2
+  requires exists i, j :: 0 <= i < j < |numbers| && numbers[i] + numbers[j] == target
+  ensures 1 <= r.0 < r.1 <= |numbers|
+  ensures numbers[r.0 - 1] + numbers[r.1 - 1] == target
+{
+  var z := TwoSum(numbers, target);
+  assert z.0 != -1;
+  assert 0 <= z.0 < z.1 < |numbers|;
+  r := (z.0 + 1, z.1 + 1);
 }

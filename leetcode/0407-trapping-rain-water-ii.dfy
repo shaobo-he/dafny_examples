@@ -6,17 +6,14 @@
 // pop the lowest water level on the frontier and, for each unvisited neighbour,
 // trap max(0, level - height) and push it back at level max(level, height).
 //
-// WHAT IS PROVEN (all machine-checked):
-//   * memory safety: every grid access is in bounds;
-//   * termination: the flood halts. The measure (|AllCells| - |visited|) +
-//     Size(heap) drops by exactly one per iteration -- a pop lowers Size by 1,
-//     and visiting a neighbour trades one un-visited cell for one heap element;
-//   * the returned volume is non-negative.
-// NOT attempted: that the returned volume equals the true trapped volume. That
-// is the algorithm's deep (Dijkstra-like) optimality theorem and is out of
-// scope here, exactly as for the other hard problems in this repo.
+// TrappingRainWaterFlood proves memory safety, termination, and non-negative
+// output for the heap-flood implementation. The public TrappingRainWater method
+// below delegates to the denotational escape-level proof in
+// 0407-trapping-rain-water-ii-correct.dfy, whose postcondition states the exact
+// trapped-water volume.
 
 include "../lib/adt/PriorityQueue.dfy"
+include "0407-trapping-rain-water-ii-correct.dfy"
 
 import opened PriorityQueue
 
@@ -63,7 +60,7 @@ method ProcessNeighbor(heightMap: seq<seq<int>>, m: int, n: int, ghost AC: set<(
   }
 }
 
-method TrappingRainWater(heightMap: seq<seq<int>>, n: int) returns (water: int)
+method TrappingRainWaterFlood(heightMap: seq<seq<int>>, n: int) returns (water: int)
   requires |heightMap| >= 1 && n >= 1
   requires forall i :: 0 <= i < |heightMap| ==> |heightMap[i]| == n
   ensures water >= 0
@@ -119,4 +116,15 @@ method TrappingRainWater(heightMap: seq<seq<int>>, n: int) returns (water: int)
     water, visited, heap := ProcessNeighbor(heightMap, m, n, AC, h, ci, cj + 1, water, visited, heap);
     SubsetCard(visited, AC);
   }
+}
+
+method TrappingRainWater(heightMap: seq<seq<int>>) returns (water: int, ghost L: seq<seq<int>>)
+  requires Rect(heightMap)
+  requires forall i, j :: InGrid(heightMap, i, j) ==> 0 <= heightMap[i][j] <= 20000
+  ensures IsWater(heightMap, L)
+  ensures forall L' :: IsWater(heightMap, L') ==>
+                         forall i, j :: InGrid(heightMap, i, j) ==> L'[i][j] <= L[i][j]
+  ensures water == Vol(L, heightMap)
+{
+  water, L := ComputeTrappedWater(heightMap, 20000);
 }

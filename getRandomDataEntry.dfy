@@ -49,6 +49,17 @@ lemma card_multiset_subset<T>(m1: multiset<T>, m2: multiset<T>)
   }
 }
 
+lemma eq_multiset_mem<T>(x: T, s1: seq<T>, s2: seq<T>)
+  requires multiset(s1) == multiset(s2)
+  ensures x in s1 <==> x in s2
+{
+  calc <==> {
+    x in s1;
+    x in multiset(s1);
+    x in multiset(s2);
+    x in s2;
+  }
+}
 lemma suffix_multiset_subset<T>(s: seq<T>, k: int)
   requires 0 <= k < |s|
   ensures multiset(s[k..]) <= multiset(s)
@@ -62,7 +73,7 @@ method getRandomDataEntry<T(==)>(m_workList: array<T>, avoidSet: seq<T>) returns
   requires uniq(m_workList[..])
   requires |avoidSet| < m_workList.Length
   ensures multiset(m_workList[..]) == old(multiset(m_workList[..]))
-  ensures e in m_workList[..] && e !in avoidSet
+  ensures e in m_workList[..] && e in old(m_workList[..]) && e !in avoidSet
 {
   var k := m_workList.Length - 1;
 
@@ -76,6 +87,7 @@ method getRandomDataEntry<T(==)>(m_workList: array<T>, avoidSet: seq<T>) returns
 
     e := m_workList[i];
     if (e !in avoidSet) {
+      eq_multiset_mem(e, m_workList[..], old(m_workList[..]));
       return e;
     }
 
@@ -110,8 +122,9 @@ method fillWithRandomDataEntries<T(==, 0)>(m_workList: array<T>, n: int, avoidSe
   requires |avoidSet| + n <= m_workList.Length
   requires n >= 0
   ensures multiset(m_workList[..]) == old(multiset(m_workList[..]))
+  ensures fresh(out)
   ensures out.Length == n
-  ensures forall x :: x in out[..] ==> x in m_workList[..] && x !in avoidSet
+  ensures forall x :: x in out[..] ==> x in m_workList[..] && x in old(m_workList[..]) && x !in avoidSet
   ensures uniq(out[..])
 {
   out := new T[n];
@@ -177,6 +190,12 @@ method fillWithRandomDataEntries<T(==, 0)>(m_workList: array<T>, n: int, avoidSe
   else {
     //    assert r == n;
     assert out[0..n] == out[..];
+  }
+
+  forall x | x in out[..]
+    ensures x in old(m_workList[..])
+  {
+    eq_multiset_mem(x, m_workList[..], old(m_workList[..]));
   }
 
   //  assert r == n;

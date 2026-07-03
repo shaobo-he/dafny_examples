@@ -18,6 +18,34 @@ predicate WellFormed(s: string) {
   OnlyParens(s) && Balanced(s) && Count(s, '(') == Count(s, ')')
 }
 
+predicate Distinct<T(==)>(xs: seq<T>) {
+  forall i, j :: 0 <= i < j < |xs| ==> xs[i] != xs[j]
+}
+
+lemma DistinctConcatDisjoint<T>(xs: seq<T>, ys: seq<T>)
+  requires Distinct(xs) && Distinct(ys)
+  requires forall x :: x in xs ==> x !in ys
+  ensures Distinct(xs + ys)
+{
+  forall i, j | 0 <= i < j < |xs + ys|
+    ensures (xs + ys)[i] != (xs + ys)[j]
+  {
+    if i < |xs| && j < |xs| {
+    } else if i < |xs| {
+      assert (xs + ys)[i] in xs;
+      assert (xs + ys)[j] in ys;
+    } else {
+      assert (xs + ys)[i] == ys[i - |xs|];
+      assert (xs + ys)[j] == ys[j - |xs|];
+    }
+  }
+}
+
+lemma InConcat<T>(xs: seq<T>, ys: seq<T>, x: T)
+  ensures x in xs + ys <==> x in xs || x in ys
+{
+}
+
 lemma BalancedAppend(s: string, c: char)
   requires Balanced(s)
   requires c == '(' || (c == ')' && Count(s, '(') > Count(s, ')'))
@@ -58,6 +86,7 @@ lemma OnlyParensSuffix(s: string, k: int)
 method Generate(n: nat) returns (result: seq<string>)
   // Soundness: every generated string is a well-formed length-2n parenthesization.
   ensures forall s :: s in result ==> |s| == 2 * n && WellFormed(s)
+  ensures Distinct(result)
   // Completeness: every well-formed length-2n parenthesization is generated.
   ensures forall s :: |s| == 2 * n && WellFormed(s) ==> s in result
 {
@@ -70,6 +99,8 @@ method Gen(open: nat, close: nat, prefix: string) returns (result: seq<string>)
   requires Balanced(prefix)
   requires Count(prefix, '(') + open == Count(prefix, ')') + close
   ensures forall s :: s in result ==> |s| == |prefix| + open + close && WellFormed(s)
+  ensures forall s :: s in result ==> s[..|prefix|] == prefix
+  ensures Distinct(result)
   // Completeness: every well-formed string of the right length that extends
   // prefix is produced.
   ensures forall s :: (|s| == |prefix| + open + close && WellFormed(s) && s[..|prefix|] == prefix)
@@ -78,6 +109,7 @@ method Gen(open: nat, close: nat, prefix: string) returns (result: seq<string>)
 {
   if open == 0 && close == 0 {
     result := [prefix];
+    assert Distinct(result);
     forall s | |s| == |prefix| && WellFormed(s) && s[..|prefix|] == prefix
       ensures s in result
     {
@@ -104,7 +136,33 @@ method Gen(open: nat, close: nat, prefix: string) returns (result: seq<string>)
     assert OnlyParens(p);
     r2 := Gen(open, close - 1, p);
   }
+  forall s | s in r1
+    ensures s !in r2
+  {
+    assert open > 0;
+    var p1 := prefix + "(";
+    assert s[..|p1|] == p1;
+    if s in r2 {
+      assert close > open;
+      var p2 := prefix + ")";
+      assert s[..|p2|] == p2;
+      assert p1[|prefix|] == '(';
+      assert p2[|prefix|] == ')';
+      assert false;
+    }
+  }
+  DistinctConcatDisjoint(r1, r2);
   result := r1 + r2;
+
+  forall s | s in result
+    ensures s[..|prefix|] == prefix
+  {
+    InConcat(r1, r2, s);
+    if s in r1 {
+    } else {
+      assert s in r2;
+    }
+  }
 
   forall s | |s| == |prefix| + open + close && WellFormed(s) && s[..|prefix|] == prefix
     ensures s in result

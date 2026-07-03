@@ -23,6 +23,32 @@ lemma DistinctUndup<T>(xs: seq<T>)
   }
 }
 
+lemma UndupLengthBound<T>(xs: seq<T>)
+  ensures |Undup(xs)| <= |xs|
+{
+  reveal Undup();
+  if |xs| != 0 {
+    UndupLengthBound(RemoveLast(xs));
+  }
+}
+
+lemma UndupDistinctIdentity<T>(xs: seq<T>)
+  requires Distinct(xs)
+  ensures Undup(xs) == xs
+{
+  reveal Undup();
+  if |xs| != 0 {
+    DistinctEqRecLast(xs);
+    assert Last(xs) !in RemoveLast(xs);
+    DistinctSubseq(xs, 0, |xs| - 1);
+    UndupDistinctIdentity(RemoveLast(xs));
+    ConcatRemoveLastLast(xs);
+  }
+}
+
+// A full Subseq(Undup(xs), xs) theorem is the remaining order-style gap.
+// The suffix-recursive definition needs a concat/append subsequence lemma that
+// is not currently exported by lib/seq/Subseq.dfy.
 // lemma SubseqUndup<T>(xs: seq<T>)
 //   ensures Subseq(Undup(xs), xs)
 // {

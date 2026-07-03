@@ -34,6 +34,24 @@ module FactorsModule {
     InFactors(n, n, x);
   }
 
+  lemma InAllFactorsSet(n: int, x: int)
+    requires n >= 1
+    ensures x in AllFactors(n) <==> x in AllFactorsSet(n)
+  {
+    InFactors(n, n, x);
+  }
+
+  lemma AllFactorsAsSet(n: int)
+    requires n >= 1
+    ensures (set x | x in AllFactors(n) :: x) == AllFactorsSet(n)
+  {
+    forall x
+      ensures x in (set y | y in AllFactors(n) :: y) <==> x in AllFactorsSet(n)
+    {
+      InAllFactorsSet(n, x);
+    }
+  }
+
   lemma FactorsSortedStrict(n: int, d: int)
     ensures SortedStrict(Factors(n, d))
   {

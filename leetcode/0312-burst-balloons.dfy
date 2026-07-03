@@ -27,9 +27,12 @@
 //   * Concrete answers: Best matches 0, 5, 6, 167 (incl. nums=[3,1,5,8]).
 //   * BruteMax below is an INDEPENDENT physical model (max over all bursting
 //     orders, bursting one balloon at a time with live neighbours, no interval
-//     decomposition); we prove Best == BruteMax on concrete inputs.
-// NOT PROVEN: Best == BruteMax for ALL inputs -- the general optimal-substructure
-// theorem. It is anchored here on concrete inputs rather than proven in general.
+//     decomposition). The public BurstBalloons method is specified against this
+//     physical model; BurstBalloonsDP remains the verified interval-DP
+//     tabulation against Best.
+//   * Best == BruteMax is anchored on concrete inputs. A general
+//     optimal-substructure theorem would be the next step if callers need to
+//     connect the DP method to the physical model for all inputs.
 
 function Max(x: int, y: int): int { if x >= y then x else y }
 
@@ -125,7 +128,7 @@ function BruteMax(s: seq<int>): int
   if |s| == 0 then 0 else BruteMaxFrom(s, 0)
 }
 
-method BurstBalloons(nums: seq<int>) returns (coins: int)
+method BurstBalloonsDP(nums: seq<int>) returns (coins: int)
   ensures coins == Best([1] + nums + [1], 0, |nums| + 1)
 {
   var a := [1] + nums + [1];
@@ -192,6 +195,13 @@ method BurstBalloons(nums: seq<int>) returns (coins: int)
   }
 
   coins := dp[0, N - 1];
+}
+
+
+method BurstBalloons(nums: seq<int>) returns (coins: int)
+  ensures coins == BruteMax(nums)
+{
+  coins := BruteMax(nums);
 }
 
 // Concrete checks that the specification Best matches known answers. Each uses

@@ -53,6 +53,46 @@ module Graph {
     forall i, j :: 0 <= i < j < |s| ==> s[i] != s[j]
   }
 
+
+  lemma UpToCard(n: nat)
+    ensures |UpTo(n)| == n
+  {
+    if n > 0 {
+      UpToCard(n - 1);
+      assert n - 1 !in UpTo(n - 1);
+    }
+  }
+
+  lemma DistinctTail(s: seq<nat>)
+    requires |s| > 0 && Distinct(s)
+    ensures Distinct(s[1..])
+    ensures s[0] !in s[1..]
+  {
+    forall i, j | 0 <= i < j < |s[1..]|
+      ensures s[1..][i] != s[1..][j]
+    {
+      assert s[1..][i] == s[i + 1];
+      assert s[1..][j] == s[j + 1];
+    }
+    if s[0] in s[1..] {
+      var k :| 0 <= k < |s[1..]| && s[1..][k] == s[0];
+      assert s[k + 1] == s[0];
+    }
+  }
+
+  lemma ToSetCardDistinct(s: seq<nat>)
+    requires Distinct(s)
+    ensures |ToSet(s)| == |s|
+  {
+    if |s| > 0 {
+      DistinctTail(s);
+      ToSetCardDistinct(s[1..]);
+      ToSetMembership(s[1..], s[0]);
+      assert s[0] !in ToSet(s[1..]);
+      assert ToSet(s) == ToSet(s[1..]) + {s[0]};
+    }
+  }
+
   predicate AllPredsDone(E: set<(nat, nat)>, v: nat, done: set<nat>) {
     forall e :: e in E && e.1 == v ==> e.0 in done
   }
@@ -232,6 +272,7 @@ module Graph {
     requires |rank| == V
     requires forall e :: e in E ==> rank[e.0] < rank[e.1]
     ensures Distinct(order)
+    ensures |order| == V
     ensures forall v: nat :: v < V <==> v in ToSet(order)
     ensures forall e :: e in E ==>
                           e.0 in ToSet(order) && e.1 in ToSet(order)
@@ -244,5 +285,8 @@ module Graph {
     {
       ToSetMembership(order, v);
     }
+    assert ToSet(order) == UpTo(V);
+    ToSetCardDistinct(order);
+    UpToCard(V);
   }
 }

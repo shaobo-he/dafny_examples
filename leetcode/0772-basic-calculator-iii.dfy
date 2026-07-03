@@ -268,9 +268,18 @@ function parseExpr(s: seq<char>, i: nat): (r: (Expr, nat))
   parseExprRest(s, pt.0, pt.1)
 }
 
-// End-to-end evaluator: parse the whole string, then take its denotational
-// meaning.  Totality/termination of parsing is proved above.
+// A LeetCode-valid input is accepted by the parser as a whole expression, and
+// no divisor evaluates to zero. This rules out the parser's total fallback cases
+// and trailing garbage at the public API boundary.
+predicate ValidExpression(s: seq<char>) {
+  parseExpr(s, 0).1 == |s| && NoDivByZero(parseExpr(s, 0).0)
+}
+
+// End-to-end evaluator: parse the whole valid string, then take its
+// denotational meaning. Totality/termination of parsing is proved above.
 function Calculate(s: seq<char>): int
+  requires ValidExpression(s)
+  ensures Calculate(s) == Eval(parseExpr(s, 0).0)
 {
   Eval(parseExpr(s, 0).0)
 }

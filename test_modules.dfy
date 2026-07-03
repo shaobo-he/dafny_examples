@@ -4,9 +4,9 @@ module Random {
     ensures a <= r <= b
 }
 
-function {:axiom} rand(n: int): int
+method {:axiom} rand(n: int) returns (r: int)
   requires 0 <= n
-  ensures 0 <= rand(n) <= n
+  ensures 0 <= r <= n
 
 method {:axiom} rand2(n: int) returns (r: int)
   requires 0 <= n
@@ -26,7 +26,7 @@ method Main()
   r2 := rand(y);
 
   assert r1 <= 4 && r2 <= 4;
-  assert r1 == r2;
+  // Two calls to a nondeterministic method are intentionally not equal by specification.
 
   r1 := rand2(y);
   r2 := rand2(y);

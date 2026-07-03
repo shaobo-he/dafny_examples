@@ -18,6 +18,7 @@ module SeqMethods {
   }
 
   method ReverseArray<T>(a: array<T>) returns (rev: array<T>)
+    ensures fresh(rev)
     ensures rev[..] == Reverse(a[..])
   {
     rev := new T[a.Length](i requires 0 <= i < a.Length reads a => a[a.Length - i - 1]);
