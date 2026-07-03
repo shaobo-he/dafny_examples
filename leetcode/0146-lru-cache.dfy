@@ -396,3 +396,27 @@ class LRUCache {
     }
   }
 }
+
+method {:test} TestLRUCache()
+{
+  var cache := new LRUCache(2);
+  cache.Put(1, 1);
+  cache.Put(2, 2);
+
+  var one := cache.Get(1);
+  expect one == 1, "Get(1) should return 1";
+
+  cache.Put(3, 3);
+  var evictedTwo := cache.Get(2);
+  expect evictedTwo == -1, "Put(3,3) should evict key 2";
+
+  cache.Put(4, 4);
+  var evictedOne := cache.Get(1);
+  expect evictedOne == -1, "Put(4,4) should evict key 1";
+
+  var three := cache.Get(3);
+  expect three == 3, "Get(3) should return 3";
+
+  var four := cache.Get(4);
+  expect four == 4, "Get(4) should return 4";
+}

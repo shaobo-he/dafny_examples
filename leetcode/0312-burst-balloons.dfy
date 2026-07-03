@@ -352,3 +352,18 @@ lemma BruteVsBestTwo()
 {
   BestEqualsBruteMaxPair(3, 1);
 }
+
+method {:test} TestBurstBalloons()
+{
+  var empty := BurstBalloons([]);
+  expect empty == 0, "empty input should score 0";
+
+  var single := BurstBalloons([5]);
+  expect single == 5, "single balloon [5] should score 5";
+
+  var pair := BurstBalloons([3, 1]);
+  expect pair == 6, "[3,1] should score 6";
+
+  var leet := BurstBalloons([3, 1, 5, 8]);
+  expect leet == 167, "[3,1,5,8] should score 167";
+}

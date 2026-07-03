@@ -178,3 +178,12 @@ method HeapFloodTrappingRainWater(heightMap: seq<seq<int>>) returns (water: int)
                        water == Vol(L, heightMap);
   }
 }
+
+method {:test} TestHeapFloodBoundaryOnly()
+{
+  var oneRow := HeapFloodTrappingRainWater([[1, 4, 2]]);
+  expect oneRow == 0, "single-row grid should trap 0";
+
+  var twoRows := HeapFloodTrappingRainWater([[3, 1, 3], [3, 3, 3]]);
+  expect twoRows == 0, "two-row grid should trap 0";
+}

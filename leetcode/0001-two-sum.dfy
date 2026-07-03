@@ -41,3 +41,16 @@ method TwoSum(nums: array<int>, target: int) returns (r: (int, int))
   }
   return (-1, -1);
 }
+
+method {:test} TestTwoSum()
+{
+  var nums := new int[4];
+  nums[0], nums[1], nums[2], nums[3] := 2, 7, 11, 15;
+  var r := TwoSum(nums, 9);
+  expect r == (0, 1), "[2,7,11,15], target 9 should return (0,1)";
+
+  var none := new int[3];
+  none[0], none[1], none[2] := 1, 2, 4;
+  var missing := TwoSum(none, 8);
+  expect missing == (-1, -1), "no-solution case should return (-1,-1)";
+}

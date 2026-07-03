@@ -23,19 +23,24 @@ jobs:
           wget -q https://github.com/dafny-lang/dafny/releases/download/v4.11.0/dafny-4.11.0-x64-ubuntu-22.04.zip
           unzip -qq dafny-4.11.0-x64-ubuntu-22.04.zip
           echo "dafny=$PWD/dafny/dafny" >> $GITHUB_ENV
-      - name: test
+      - name: verify and test
         env:
           DAFNY: "${{ env.dafny }}"
           TEST_DIR: "${{ matrix.test_dir }}"
         run: |
-          for b in $(ls $TEST_DIR/*.dfy)
+          set -euo pipefail
+          shopt -s nullglob
+          for b in "$TEST_DIR"/*.dfy
           do
-            echo $b
+            echo "$b"
             if [[ "$b" == *"[wip]"* ]]
             then
-              echo "Ignore working in progress proof: "$b
+              echo "Ignore working in progress proof: $b"
+            elif grep -q '{:test}' "$b"
+            then
+              "$DAFNY" test --verification-time-limit 30 "$b"
             else
-              $DAFNY verify "$b"
+              "$DAFNY" verify --verification-time-limit 30 "$b"
             fi
             echo "================================================"
           done

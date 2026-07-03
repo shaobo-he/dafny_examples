@@ -526,3 +526,12 @@ ExampleBowl()
           Vol(EscGrid(H, 5, 1), H) == 4
 {
 }
+
+method {:test} TestTrappingRainWaterByEscapeLevels()
+{
+  var bowl := TrappingRainWater([[5, 5, 5], [5, 1, 5], [5, 5, 5]]);
+  expect bowl == 4, "3x3 bowl should trap 4";
+
+  var flat := TrappingRainWater([[1, 1], [1, 1]]);
+  expect flat == 0, "boundary-only grid should trap 0";
+}

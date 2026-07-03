@@ -156,3 +156,23 @@ class MinStack {
 //     return Last(mins);
 //   }
 // }
+
+method {:test} TestMinStack()
+{
+  var stack := new MinStack();
+  stack.Push(-2);
+  stack.Push(0);
+  stack.Push(-3);
+
+  var min1 := stack.GetMin();
+  expect min1 == -3, "minimum should be -3";
+
+  var popped := stack.Pop();
+  expect popped == -3, "pop should remove -3";
+
+  var top := stack.Top();
+  expect top == 0, "top should be 0";
+
+  var min2 := stack.GetMin();
+  expect min2 == -2, "minimum should be -2 after popping -3";
+}

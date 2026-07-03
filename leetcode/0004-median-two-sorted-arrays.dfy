@@ -464,3 +464,15 @@ lemma ExampleEven()
   assert Merge([1, 2], [3, 4]) == [1, 2, 3, 4];
   MergeLen([1, 2], [3, 4]);
 }
+
+method {:test} TestFindMedianSortedArraysX2()
+{
+  var odd := FindMedianSortedArraysX2([1, 3], [2]);
+  expect odd == 4, "median of [1,3] and [2] should be 2.0";
+
+  var even := FindMedianSortedArraysX2([1, 2], [3, 4]);
+  expect even == 5, "median of [1,2] and [3,4] should be 2.5";
+
+  var swapped := FindMedianSortedArraysX2([3, 4], [1, 2]);
+  expect swapped == 5, "median should be independent of argument order";
+}
