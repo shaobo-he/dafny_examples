@@ -160,7 +160,7 @@ module FactorsModule {
 
   // Every listed factor is positive. (The divisor-pairing identity
   // AllFactors(n)[|A|-i-1] == n / AllFactors(n)[i] that previously sat here as an
-  // unproven {:axiom} was unused; it can be reinstated with a real order-reversing
+  // An older unproved lemma was unused; it can be reinstated with a real order-reversing
   // bijection proof if needed.)
   lemma AllFactorsPositive(n: int, i: int)
     requires 0 <= i < |AllFactors(n)|

@@ -1,8 +1,8 @@
 // LeetCode 1: Two Sum.
 // Note on the "minimality" postcondition (forall i<j<r.1 :: sum != target): it
 // pins r.1 as the SMALLEST possible second index of any solution; among pairs
-// ending at r.1 it returns one valid first index (the map keeps the earliest
-// complement seen), but r.0 is not claimed to be the globally smallest first
+// ending at r.1 it returns one valid first index (the map keeps the latest
+// equal-valued complement seen), but r.0 is not claimed to be the globally smallest first
 // index. This is the "earliest solution by second index" notion, not the
 // lexicographically-smallest pair.
 //
@@ -22,6 +22,7 @@ method TwoSum(nums: array<int>, target: int) returns (r: (int, int))
                        forall i, j :: 0 <= i < j < r.1 ==> nums[i] + nums[j] != target
   ensures (exists i, j :: 0 <= i < j < nums.Length && nums[i] + nums[j] == target) ==>
             0 <= r.0 < r.1 < nums.Length && nums[r.0] + nums[r.1] == target
+  ensures r.0 == -1 ==> r.1 == -1
   ensures r.0 == -1 <==> forall i, j :: 0 <= i < j < nums.Length ==> nums[i] + nums[j] != target
 {
   var m: map<int, int> := map[];

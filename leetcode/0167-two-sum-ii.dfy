@@ -32,6 +32,7 @@ lemma CaseShape(numbers: seq<int>, target: int, left: int, right: int)
   requires 0 <= left <= right < |numbers|
   decreases right - left
   ensures TwoSumF(numbers, target, left, right).0 == -1 || 0 <= TwoSumF(numbers, target, left, right).0
+  ensures TwoSumF(numbers, target, left, right).0 == -1 ==> TwoSumF(numbers, target, left, right).1 == -1
 {
   if left == right {
   } else if numbers[left] + numbers[right] == target {
@@ -70,6 +71,7 @@ method TwoSum(numbers: seq<int>, target: int) returns (r: (int, int))
                        numbers[r.0] + numbers[r.1] == target
   ensures (exists i, j :: 0 <= i < j < |numbers| && numbers[i] + numbers[j] == target) ==>
             0 <= r.0 < r.1 < |numbers| && numbers[r.0] + numbers[r.1] == target
+  ensures r.0 == -1 ==> r.1 == -1
   ensures r.0 == -1 ==> forall i, j :: 0 <= i < j < |numbers| ==> numbers[i] + numbers[j] != target
 {
   /*

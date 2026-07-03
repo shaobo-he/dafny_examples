@@ -36,6 +36,7 @@ ghost method isCelebrityP(n: int, i: int) returns (r : bool)
 
 ghost method findCelebrity(n : int) returns (r : int)
   requires 2 <= n <= 100
+  ensures r == -1 || 0 <= r < n
   ensures 0 <= r < n ==> isCelebrity(n, r)
   ensures r == -1 ==> forall i :: 0 <= i < n ==> !isCelebrity(n, i)
 {

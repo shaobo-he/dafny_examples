@@ -4,6 +4,7 @@ import opened FactorsModule
 
 method KthFactor(n: int, k: int) returns (r: int)
   requires 0 < k <= n
+  ensures r == -1 || r > 0
   ensures r == -1 <==> k > |AllFactors(n)|
   ensures r > 0 <==> k <= |AllFactors(n)| && AllFactors(n)[k - 1] == r
 {

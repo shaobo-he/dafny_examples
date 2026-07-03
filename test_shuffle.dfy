@@ -1,9 +1,10 @@
 
-method {:axiom} random(a: int, b: int) returns (r: int)
-  //  requires a <= b
-  // Bounded nondeterministic choice only. This axiom does not specify a
-  // probability distribution, independence between calls, or uniformity.
+method random(a: int, b: int) returns (r: int)
+  // Deterministic representative of bounded choice for this experiment.
   ensures a <= b ==> a <= r <= b
+{
+  r := if a <= b then a else 0;
+}
 
 lemma eqMultiset_t<T>(t: T, s1: seq<T>, s2: seq<T>)
   requires multiset(s1) == multiset(s2)
@@ -88,12 +89,22 @@ function set_of_seq<T>(s: seq<T>): set<T>
   set x: T | x in s :: x
 }
 
-lemma {:axiom} in_set_of_seq<T>(x: T, s: seq<T>)
+lemma in_set_of_seq<T>(x: T, s: seq<T>)
   ensures x in s <==> x in set_of_seq(s)
+{
+}
 
-lemma {:axiom} subset_set_of_seq<T>(s1: seq<T>, s2: seq<T>)
+lemma subset_set_of_seq<T>(s1: seq<T>, s2: seq<T>)
   requires set_of_seq(s1) <= set_of_seq(s2)
   ensures forall x :: x in s1 ==> x in s2
+{
+  forall x | x in s1
+    ensures x in s2
+  {
+    in_set_of_seq(x, s1);
+    in_set_of_seq(x, s2);
+  }
+}
 
 method getRandomDataEntry<T(==)>(m_workList: array<T>, avoidSet: seq<T>) returns (e: T)
   // Verified as finding some entry outside avoidSet. This simple version is

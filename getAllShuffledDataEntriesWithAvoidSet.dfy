@@ -1,7 +1,10 @@
-method {:axiom} random(a: int, b: int) returns (r: int)
-  // Bounded nondeterministic choice only. This axiom does not specify a
+method random(a: int, b: int) returns (r: int)
+  // Deterministic representative of bounded choice. This does not specify a
   // probability distribution, independence between calls, or uniformity.
   ensures a <= b ==> a <= r <= b
+{
+  r := if a <= b then a else 0;
+}
 
 method swap<T>(a: array<T>, i: int, j: int)
   // requires a != null

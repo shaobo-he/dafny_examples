@@ -53,8 +53,10 @@ find . -name '*.dfy' | awk '!/\[wip\]/' \
 
 ## CI
 
-`.github/workflows/ci.yaml` runs `dafny verify` on every `.dfy` file across
-six matrix slices (one per directory). `[wip]`-prefixed files are skipped.
+`.github/workflows/ci.yaml` checks every `.dfy` file across six matrix slices
+(one per directory) with Dafny 4.11.0 and `--verification-time-limit 30`.
+Files containing `{:test}` run through `dafny test`; the rest run through
+`dafny verify`. `[wip]`-prefixed files are skipped.
 
 ## License
 

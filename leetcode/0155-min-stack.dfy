@@ -62,6 +62,7 @@ class MinStack {
     modifies this
     requires Valid()
     requires !IsEmpty()
+    ensures val == old(dataSeq)[0]
     ensures dataSeq == old(dataSeq[1..])
     ensures Valid()
   {

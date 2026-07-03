@@ -24,7 +24,7 @@ function S1(p: seq<int>, m: int): int   // max over 0<=b<=s<m of  p[s]-p[b]
   if m == 1 then 0 else Max(S1(p, m - 1), B1(p, m) + p[m - 1])
 }
 
-function B2(p: seq<int>, m: int): int   // max over 0<=b1<=s1<b2<m ... one tx then buy again
+function B2(p: seq<int>, m: int): int   // max over 0<=b1<=s1<=b2<m ... one tx then buy again
   requires 1 <= m <= |p|
   decreases m, 2
 {

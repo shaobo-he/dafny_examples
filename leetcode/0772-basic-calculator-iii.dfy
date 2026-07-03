@@ -14,16 +14,18 @@
 //     genuinely truncates toward zero.
 //   * A total, terminating recursive-descent parser (`Expr`-producing) whose
 //     grammar encodes precedence.  We prove termination and the structural
-//     postconditions (index monotone & in-bounds).  Precedence/associativity of
-//     the denotational meaning is captured by small structural Eval lemmas.
+//     postconditions (index monotone & in-bounds).  Separate concrete examples
+//     exercise parser precedence, associativity, parentheses, and multi-digit
+//     numbers.
 //
 // What is proven here:
 //   * TDiv genuinely truncates toward zero (and differs from Dafny's Euclidean
 //     `/` on negatives) — full characterization + concrete cases.
 //   * Eval is a total denotational semantics; the parser is total and
 //     terminating on every input.
-//   * End-to-end correctness on concrete inputs (the LeetCode examples and a
-//     parenthesized case), each parsed and evaluated string -> number.
+//   * End-to-end correctness on concrete inputs (the LeetCode examples plus
+//     precedence, associativity, parentheses, and multi-digit cases), each
+//     parsed and evaluated string -> number.
 // Not attempted: a general soundness/completeness proof of the parser against
 // an inductive grammar relation (research-grade; would blow the time budget).
 
@@ -148,15 +150,14 @@ lemma DivMeaningIsTruncDiv(a: int, b: int)
 {
 }
 
-// Precedence: `*` binds tighter than `+` in the AST the grammar builds.
+// Eval for the AST shape where `*` is nested below `+`.
 lemma PrecedenceMulOverAdd(a: int, b: int, c: int)
   ensures Eval(Add(Num(a), Mul(Num(b), Num(c)))) == a + b * c
 {
   assert Eval(Mul(Num(b), Num(c))) == b * c;
 }
 
-// Left-to-right associativity for equal precedence: a - b - c parses as
-// (a - b) - c.
+// Eval for the left-associated AST shape `(a - b) - c`.
 lemma LeftAssocSub(a: int, b: int, c: int)
   ensures Eval(Sub(Sub(Num(a), Num(b)), Num(c))) == a - b - c
 {
@@ -379,5 +380,14 @@ lemma Example2()
 // Parentheses override precedence: without them 2*3+4 = 10, with them 2*(3+4) = 14.
 lemma Example3()
   ensures Calculate("2*(3+4)") == 14
+{
+}
+lemma ExampleMultiDigit()
+  ensures Calculate("12+3") == 15
+{
+}
+
+lemma ExampleLeftAssocSub()
+  ensures Calculate("8-4-2") == 2
 {
 }

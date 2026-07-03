@@ -12,10 +12,10 @@ function Mirror<T>(t: Tree<T>) : (r: Tree<T>)
   case Node(x, l, r) => Node(x, Mirror(r), Mirror(l))
 }
 
-// The defining characterization of inversion: mirroring a tree reverses its
-// in-order traversal. Unlike Size/MirrorEq/MirrorPerm below, this is NOT
-// satisfied by the identity (no-swap) function, so it genuinely pins down that
-// left and right subtrees are swapped at every node.
+// A corroborating property of inversion: mirroring a tree reverses its in-order
+// traversal. Unlike Size/MirrorEq/MirrorPerm below, this is NOT satisfied by
+// the identity (no-swap) function. The structural characterization is the
+// recursive Mirror definition itself.
 lemma MirrorInorderReverse<T>(t: Tree<T>)
   ensures InorderFlatten(Mirror(t)) == Reverse(InorderFlatten(t))
 {
